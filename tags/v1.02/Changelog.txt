@@ -1,0 +1,16 @@
+**1.02**
+
+- Release date: 08/19/2018
+- Bug fixed: Advancements were not being tracked properly on Horde characters.
+
+**1.01**
+
+- Release date: 08/19/2018
+- Fixed: Missions icon shows up along with the other icons when player is flagged as having an 8.0 Garrison.
+- Reorganized the LDB text format dropdown menu into checkboxes for simplicity and flexibility.
+- Added "Resources" (War Resources) and "Seals" (Seal of Wartorn Fate) as an optional display in the LDB data source.
+
+**1.0**
+
+- Release date: 08/17/2018
+- Initial release.
