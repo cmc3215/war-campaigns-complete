@@ -1,0 +1,6 @@
+package-as: WarCampaignsComplete
+enable-nolib-creation: no
+
+manual-changelog:
+	filename: Changelog.txt
+	markup-type: markdown
