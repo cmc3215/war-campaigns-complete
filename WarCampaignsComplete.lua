@@ -4,7 +4,7 @@
 local NS = select( 2, ... );
 local L = NS.localization;
 NS.releasePatch = "8.0.1";
-NS.versionString = "1.01";
+NS.versionString = "1.02";
 NS.version = tonumber( NS.versionString );
 --
 NS.initialized = false;
@@ -392,8 +392,9 @@ NS.UpdateCharacter = function()
 			--
 			local talentTreeIDs = C_Garrison.GetTalentTreeIDsByClassID( LE_GARRISON_TYPE_8_0, NS.currentCharacter.classID );
 			local completeTalentID = C_Garrison.GetCompleteTalent( LE_GARRISON_TYPE_8_0 );
-			if talentTreeIDs and talentTreeIDs[2] then -- Talent trees and first treeID available
-				local talentTree = select( 3, C_Garrison.GetTalentTreeInfoForID( talentTreeIDs[2] ) );
+			local talentTreeIDIndex = NS.currentCharacter.factionIcon == 2173920 --[[ Horde ]] and 1 or 2;
+			if talentTreeIDs and talentTreeIDs[talentTreeIDIndex] then -- Talent trees and first treeID available
+				local talentTree = select( 3, C_Garrison.GetTalentTreeInfoForID( talentTreeIDs[talentTreeIDIndex] ) );
 				for _,talent in ipairs( talentTree ) do
 					talent.tier = talent.tier + 1; -- Fix tiers starting at 0
 					talent.uiOrder = talent.uiOrder + 1; -- Fix order starting at 0
