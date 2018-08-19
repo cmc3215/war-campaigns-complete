@@ -1,3 +1,8 @@
+**1.02**
+
+- Release date: 08/19/2018
+- Bug fixed: Advancements were not being tracked properly on Horde characters.
+
 **1.01**
 
 - Release date: 08/19/2018
