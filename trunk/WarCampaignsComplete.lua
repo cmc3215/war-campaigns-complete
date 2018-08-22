@@ -4,7 +4,7 @@
 local NS = select( 2, ... );
 local L = NS.localization;
 NS.releasePatch = "8.0.1";
-NS.versionString = "1.02";
+NS.versionString = "1.03";
 NS.version = tonumber( NS.versionString );
 --
 NS.initialized = false;
@@ -19,41 +19,16 @@ NS.shipmentConfirmsCount = 0;
 NS.shipmentConfirmsFlaggedComplete = false;
 NS.refresh = false;
 --
+NS.TooltipMonitorButton = nil; -- References the button origin of the tooltip
+--
 NS.minimapButtonFlash = nil;
 NS.alertFlashing = false;
 --
 NS.selectedCharacterKey = nil;
 NS.charactersTabItems = {};
 --
-NS.allCharacters = {
-	seals = {},
-	missions = {},
-	advancement = {},
-	champions = {},
-	orders = {},
-	--
-	missionsComplete = 0,
-	missionsTotal = 0,
-	nextMissionTimeRemaining = nil,
-	allMissionsTimeRemaining = nil,
-	nextMissionCharName = "",
-	--
-	advancementsComplete = 0,
-	advancementsTotal = 0,
-	nextAdvancementTimeRemaining = nil,
-	allAdvancementsTimeRemaining = nil,
-	nextAdvancementCharName = "",
-	--
-	workOrdersReady = 0,
-	workOrdersTotal = 0,
-	nextWorkOrderTimeRemaining = nil,
-	allWorkOrdersTimeRemaining = nil,
-	nextWorkOrderCharName = "",
-	--
-	alertCurrentCharacter = false,
-	alertAnyCharacter = false,
-};
-NS.currentCharacter = {
+NS.allCharacters = {}; -- See NS.UpdateCharacters()
+NS.currentCharacter = { -- See NS.UpdateCharacter()
 	name = UnitName( "player" ) .. "-" .. GetRealmName(),
 	factionIcon = UnitFactionGroup( "player" ) == "Horde" and 2173920 or 2173919,	-- Permanent
 	class = select( 2, UnitClass( "player" ) ),										-- Permanent
@@ -76,13 +51,7 @@ NS.maxChampions = 5;
 NS.fullHeart = NS.GetAtlasInlineTexture( 'GarrisonTroops-Health' );
 NS.emptyHeart = NS.GetAtlasInlineTexture( 'GarrisonTroops-Health-Consume' );
 --
-NS.ldbTooltip = {
-	--header = {},
-	--missions = {},
-	--advancements = {},
-	--orders = {},
-	available = false,
-};
+NS.ldbTooltip = {}; -- See NS.UpdateLDB()
 --------------------------------------------------------------------------------------------------------------------------------------------
 -- SavedVariables
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -125,10 +94,13 @@ NS.DefaultSavedVariables = function()
 		["ldbShowOrders"] = true,
 		["ldbShowNextOrder"] = true,
 		["ldbShowNextOrderCharacter"] = true,
+		["ldbShowHOA"] = true,
 		["ldbShowResources"] = false,
 		["ldbShowSeals"] = false,
 		["ldbShowLabels"] = true,
+		["ldbUseLetterLabels"] = false,
 		["ldbShowWhenNone"] = true,
+		["ldbNumbersOnly"] = false,
 		["ldbi"] = { hide = true },
 		["ldbiShowCharacterTooltip"] = true,
 	};
@@ -148,6 +120,35 @@ NS.Upgrade = function()
 		NS.db["ldbShowSeals"] = vars["ldbShowSeals"];
 		-- Remove
 		NS.db["ldbTextFormat"] = nil;
+	end
+	-- 1.03
+	if version < 1.03 then
+		-- Add
+		NS.db["ldbUseLetterLabels"] = vars["ldbUseLetterLabels"];
+		NS.db["ldbNumbersOnly"] = vars["ldbNumbersOnly"];
+		NS.db["ldbShowHOA"] = vars["ldbShowHOA"];
+		-- Advancements
+		for ck,c in ipairs( NS.db["characters"] ) do
+			-- Add
+			c["advancement"]["selectedTalents"] = {};
+			-- Change talent being researched to tier (table to number)
+			if c["advancement"]["talentBeingResearched"] then
+				c["advancement"]["tierBeingResearched"] = c["advancement"]["talentBeingResearched"].tier;
+			end
+			-- Fill selected talents with empty tables unless talentBeingResearched matches, then transfer it
+			if c["advancement"]["numTalents"] then
+				for i = 1, c["advancement"]["numTalents"] do
+					if i == c["advancement"]["tierBeingResearched"] then
+						c["advancement"]["selectedTalents"][i] = CopyTable( c["advancement"]["talentBeingResearched"] );
+					else
+						c["advancement"]["selectedTalents"][i] = {};
+					end
+				end
+			end
+			-- Remove
+			c["advancement"]["talentBeingResearched"] = nil;
+			c["advancement"]["numTalents"] = nil;
+		end
 	end
 	--
 	NS.db["version"] = NS.version;
@@ -324,8 +325,14 @@ NS.UpdateCharacter = function()
 			["realm"] = GetRealmName(),						-- Permanent
 			["class"] = NS.currentCharacter.class,			-- Permanent
 			["level"] = 0,									-- Reset below every update
+			["xp"] = 0,										-- ^
+			["xpMax"] = 0,									-- ^
 			["xpPercent"] = 0,								-- ^
 			["isRested"] = nil,								-- ^
+			["hoaLevel"] = 0,								-- ^
+			["ap"] = 0,										-- ^
+			["apMax"] = 0,									-- ^
+			["apPercent"] = 0,								-- ^
 			["factionIcon"] = nil,							-- Reset below every update (Pandas may change)
 			["warResources"] = 0,							-- Reset below every update
 			["advancement"] = {},							-- ^
@@ -338,13 +345,30 @@ NS.UpdateCharacter = function()
 			["monitor"] = {},								-- Set below for each item when first added
 		};
 	end
+	local char = NS.db["characters"][k];
 	--------------------------------------------------------------------------------------------------------------------------------------------
-	NS.db["characters"][k]["level"] = UnitLevel( "player" );
-	NS.db["characters"][k]["xpPercent"] = NS.db["characters"][k]["level"] ~= 120 and math.floor( ( UnitXP( "player" ) / UnitXPMax( "player" ) * 100 ) ) or 0;
-	NS.db["characters"][k]["isRested"] = NS.db["characters"][k]["level"] ~= 120 and ( IsResting() or GetXPExhaustion() ) or false;
-	NS.db["characters"][k]["factionIcon"] = NS.currentCharacter.factionIcon;
-	NS.db["characters"][k]["warResources"] = select( 2, GetCurrencyInfo( 1560 ) );
-	NS.db["characters"][k]["sealOfWartornFate"] = select( 2, GetCurrencyInfo( 1580 ) );
+	char["level"] = UnitLevel( "player" );
+	char["xp"] = UnitXP( "player" );
+	char["xpMax"] = UnitXPMax( "player" );
+	char["xpPercent"] = char["level"] ~= 120 and math.floor( ( char["xp"] / char["xpMax"] * 100 ) ) or 0;
+	char["isRested"] = char["level"] ~= 120 and ( IsResting() or GetXPExhaustion() ) or false;
+	--
+	local azeriteItemLocation = C_AzeriteItem.FindActiveAzeriteItem();
+	if azeriteItemLocation then
+		char["ap"], char["apMax"] = C_AzeriteItem.GetAzeriteItemXPInfo( azeriteItemLocation );
+		char["hoaLevel"] = C_AzeriteItem.GetPowerLevel( azeriteItemLocation );
+		char["apPercent"] = math.floor( ( char["ap"] / char["apMax"] * 100 ) );
+	else
+		char["ap"] = 0;
+		char["apMax"] = 0;
+		char["hoaLevel"] = 0;
+		char["apPercent"] = 0;
+	end
+	--
+	char["factionIcon"] = NS.currentCharacter.factionIcon;
+	--
+	char["warResources"] = select( 2, GetCurrencyInfo( 1560 ) );
+	char["sealOfWartornFate"] = select( 2, GetCurrencyInfo( 1580 ) );
 	--------------------------------------------------------------------------------------------------------------------------------------------
 	-- War Campaign Mission Table ?
 	--------------------------------------------------------------------------------------------------------------------------------------------
@@ -383,12 +407,13 @@ NS.UpdateCharacter = function()
 			--------------------------------------------------------------------------------------------------------------------------------------------
 			-- Advancement
 			--------------------------------------------------------------------------------------------------------------------------------------------
-			wipe( NS.db["characters"][k]["advancement"] ); -- Start fresh every update
-			local talentTiers = {}; -- Selected talents by tier
-			if NS.db["characters"][k]["monitor"]["advancement"] == nil then
-				NS.db["characters"][k]["monitor"]["advancement"] = true;
+			wipe( char["advancement"] ); -- Start fresh every update
+			if char["monitor"]["advancement"] == nil then
+				char["monitor"]["advancement"] = true;
 			end
 			monitorable["advancement"] = true;
+			--
+			local talentTiers = {}; -- Selected talents by tier
 			--
 			local talentTreeIDs = C_Garrison.GetTalentTreeIDsByClassID( LE_GARRISON_TYPE_8_0, NS.currentCharacter.classID );
 			local completeTalentID = C_Garrison.GetCompleteTalent( LE_GARRISON_TYPE_8_0 );
@@ -401,38 +426,38 @@ NS.UpdateCharacter = function()
 					if talent.selected then
 						talentTiers[talent.tier] = talent;
 						if talent.isBeingResearched or talent.id == completeTalentID then
-							NS.db["characters"][k]["advancement"]["talentBeingResearched"] = CopyTable( talent );
+							char["advancement"]["tierBeingResearched"] = talent.tier;
 						end
 					end
 				end
 				-- Talent Tier Available?
-				if ( not NS.db["characters"][k]["advancement"]["talentBeingResearched"] and #talentTiers < NS.maxAdvancementTiers ) then
-					NS.db["characters"][k]["advancement"]["newTalentTier"] = {};
+				if ( not char["advancement"]["tierBeingResearched"] and #talentTiers < NS.maxAdvancementTiers ) then
+					char["advancement"]["newTalentTier"] = {};
 					local newTier = #talentTiers + 1;
 					for _,talent in ipairs( talentTree ) do
 						if talent.tier == newTier then
-							NS.db["characters"][k]["advancement"]["newTalentTier"][talent.uiOrder] = CopyTable( talent );
+							char["advancement"]["newTalentTier"][talent.uiOrder] = CopyTable( talent );
 						end
 					end
 				end
 				-- Advancements Locked? -- Not if player has talents or is on quest "Adapting Our Tactics"
 				if #talentTiers > 0	or ( NS.currentCharacter.factionIcon == 2173920 --[[ Horde ]] and GetQuestLogIndexByID( 53602 ) > 0 ) or ( NS.currentCharacter.factionIcon == 2173919 --[[ Alliance]] and GetQuestLogIndexByID( 53583 ) > 0 ) then
-					NS.db["characters"][k]["advancement"]["locked"] = false;
+					char["advancement"]["locked"] = false;
 				else
-					NS.db["characters"][k]["advancement"]["locked"] = true;
+					char["advancement"]["locked"] = true;
 				end
 			end
 			--
-			NS.db["characters"][k]["advancement"]["numTalents"] = #talentTiers;
+			char["advancement"]["selectedTalents"] = CopyTable( talentTiers );
 			--------------------------------------------------------------------------------------------------------------------------------------------
 			-- Work Orders
 			--------------------------------------------------------------------------------------------------------------------------------------------
-			wipe( NS.db["characters"][k]["orders"] ); -- Start fresh every update
+			wipe( char["orders"] ); -- Start fresh every update
 			-- Follower Shipments
 			local followerShipments = C_Garrison.GetFollowerShipments( LE_GARRISON_TYPE_8_0 );
 			for i = 1, #followerShipments do
 				local name,texture,capacity,ready,total,creationTime,duration = C_Garrison.GetLandingPageShipmentInfoByContainerID( followerShipments[i] );
-				table.insert( NS.db["characters"][k]["orders"], {
+				table.insert( char["orders"], {
 					["name"] = name,
 					["texture"] = texture,
 					["capacity"] = capacity,
@@ -450,7 +475,7 @@ NS.UpdateCharacter = function()
 				local champions = {};
 				local troopCapacity = 4 + ( talentTiers[2] and not talentTiers[2].isBeingResearched and talentTiers[2].id == 549 --[[ Upgraded Troop Barracks ]] and 2 or 0 );
 				local followers = C_Garrison.GetFollowers( LE_FOLLOWER_TYPE_GARRISON_8_0 );
-				NS.db["characters"][k]["troopsUnlocked"] = IsQuestFlaggedCompleted( 51771 ) --[[ Horde ]] or IsQuestFlaggedCompleted( 51715 ) --[[ Alliance ]] or false;
+				char["troopsUnlocked"] = IsQuestFlaggedCompleted( 51771 ) --[[ Horde ]] or IsQuestFlaggedCompleted( 51715 ) --[[ Alliance ]] or false;
 				if followers and #followers > 0 then
 					for i = 1, #followers do
 						if C_Garrison.GetFollowerIsTroop( followers[i].followerID ) then
@@ -461,6 +486,7 @@ NS.UpdateCharacter = function()
 								name = followers[i].name,
 								durability = followers[i].durability,
 								maxDurability = followers[i].maxDurability,
+								onMission = false, -- reset below in Missions
 							};
 						-- Champion
 						elseif followers[i].isCollected then
@@ -470,50 +496,51 @@ NS.UpdateCharacter = function()
 								name = followers[i].name,
 								xp = followers[i].xp,
 								levelXP = followers[i].levelXP,
+								onMission = false, -- reset below in Missions
 							};
 						end
 					end
 				end
 				NS.Sort( troops, "quality", "DESC" ); -- Order by quality for a more consistent tooltip display
 				NS.Sort( champions, "quality", "DESC" ); -- ^
-				NS.db["characters"][k]["troops"] = CopyTable( troops );
-				NS.db["characters"][k]["champions"] = CopyTable( champions );
+				char["troops"] = CopyTable( troops );
+				char["champions"] = CopyTable( champions );
 				-- Troops - merge troop data into follower shipment (work order) or create a placeholder work order
 				local texture = NS.currentCharacter.factionIcon;
 				local name = FOLLOWERLIST_LABEL_TROOPS;
 				if #followerShipments == 1 then -- SHOULD BE ONLY ONE AT THIS TIME
 					-- Troop order FOUND
-					local order = NS.db["characters"][k]["orders"][1]; -- ONE ^
+					local order = char["orders"][1]; -- ONE ^
 					order["name"] = name;
 					order["texture"] = texture;
 					order["capacity"] = troopCapacity;
 					order["troopCount"] = #troops;
 				else
 					-- Troop order NOT FOUND
-					table.insert( NS.db["characters"][k]["orders"], {
+					table.insert( char["orders"], {
 						["name"] = name,
 						["texture"] = texture,
 						["capacity"] = troopCapacity,
 						["troopCount"] = #troops,
 					} );
 				end
-				if NS.db["characters"][k]["monitor"][texture] == nil then
-					NS.db["characters"][k]["monitor"][texture] = true; -- Monitored by default
+				if char["monitor"][texture] == nil then
+					char["monitor"][texture] = true; -- Monitored by default
 				end
 				monitorable[texture] = true;
 				-- Champions
-				if NS.db["characters"][k]["monitor"]["champions"] == nil then
-					NS.db["characters"][k]["monitor"]["champions"] = true; -- Monitored by default
+				if char["monitor"]["champions"] == nil then
+					char["monitor"]["champions"] = true; -- Monitored by default
 				end
 				monitorable["champions"] = true;
 			end
 			--------------------------------------------------------------------------------------------------------------------------------------------
 			-- Missions
 			--------------------------------------------------------------------------------------------------------------------------------------------
-			wipe( NS.db["characters"][k]["missions"] );
-			NS.db["characters"][k]["missions"] = C_Garrison.GetLandingPageItems( LE_GARRISON_TYPE_8_0 ); -- In Progress or Complete
-			for i = 1, #NS.db["characters"][k]["missions"] do
-				local mission = NS.db["characters"][k]["missions"][i];
+			wipe( char["missions"] );
+			char["missions"] = C_Garrison.GetLandingPageItems( LE_GARRISON_TYPE_8_0 ); -- In Progress or Complete
+			for i = 1, #char["missions"] do
+				local mission = char["missions"][i];
 				-- Success Chance
 				mission.successChance = C_Garrison.GetMissionSuccessChance( mission.missionID );
 				-- Rewards
@@ -542,27 +569,27 @@ NS.UpdateCharacter = function()
 					mission.followers[x] = C_Garrison.GetFollowerName( mission.followers[x] ) or UNKNOWN;
 					-- Insert mission times into Troops and Champions data
 					if mission.timeLeftSeconds then
-						local championKey = NS.FindKeyByField( NS.db["characters"][k]["champions"], "name", mission.followers[x] );
+						local championKey = NS.FindKeyByField( char["champions"], "name", mission.followers[x] );
 						if championKey then
-							NS.db["characters"][k]["champions"][championKey]["timeLeftSeconds"] = mission.timeLeftSeconds;
+							char["champions"][championKey]["timeLeftSeconds"] = mission.timeLeftSeconds;
 						else
-							local troopKey = NS.FindKeyByField( NS.db["characters"][k]["troops"], "name", mission.followers[x] );
+							local troopKey = NS.FindKeyByField( char["troops"], "name", mission.followers[x] );
 							if troopKey then
-								NS.db["characters"][k]["troops"][troopKey]["timeLeftSeconds"] = mission.timeLeftSeconds;
+								char["troops"][troopKey]["timeLeftSeconds"] = mission.timeLeftSeconds;
 							end
 						end
 					end
 				end
 			end
-			if NS.db["characters"][k]["monitor"]["missions"] == nil then
-				NS.db["characters"][k]["monitor"]["missions"] = true; -- Monitored by default
+			if char["monitor"]["missions"] == nil then
+				char["monitor"]["missions"] = true; -- Monitored by default
 			end
 			monitorable["missions"] = true;
 			--------------------------------------------------------------------------------------------------------------------------------------------
 			-- Seals
 			--------------------------------------------------------------------------------------------------------------------------------------------
-			wipe( NS.db["characters"][k]["seals"] );
-			if NS.db["characters"][k]["level"] >= 120 then
+			wipe( char["seals"] );
+			if char["level"] >= 120 then
 				-- Seal of Wartorn Fate Quests
 				local sealOfWartornFateQuestsCompleted = 0;
 				for i = 1, #NS.sealOfWartornFateQuests do
@@ -573,18 +600,18 @@ NS.UpdateCharacter = function()
 						end
 					end
 				end
-				NS.db["characters"][k]["seals"]["sealOfWartornFateQuestsCompleted"] = sealOfWartornFateQuestsCompleted;
+				char["seals"]["sealOfWartornFateQuestsCompleted"] = sealOfWartornFateQuestsCompleted;
 			end
 			--------------------------------------------------------------------------------------------------------------------------------------------
 			-- Update Time / Monitor Clean Up
 			--------------------------------------------------------------------------------------------------------------------------------------------
-			NS.db["characters"][k]["updateTime"] = currentTime;
-			NS.db["characters"][k]["weeklyResetTime"] = NS.GetWeeklyQuestResetTime();
+			char["updateTime"] = currentTime;
+			char["weeklyResetTime"] = NS.GetWeeklyQuestResetTime();
 			if not newCharacter then
 				-- Monitor Clean Up, only when NOT a new character
-				for monitor in pairs( NS.db["characters"][k]["monitor"] ) do
+				for monitor in pairs( char["monitor"] ) do
 					if not monitorable[monitor] then
-						NS.db["characters"][k]["monitor"][monitor] = nil;
+						char["monitor"][monitor] = nil;
 					end
 				end
 			end
@@ -600,7 +627,7 @@ NS.UpdateCharacter = function()
 			NS.SortCharacters( "automatic" );
 			NS.ResetCharactersOrderPositions();
 		else
-			NS.db["characters"][k]["order"] = k;
+			char["order"] = k;
 		end
 	end
 end
@@ -612,6 +639,11 @@ NS.UpdateCharacters = function()
 	local advancement = {};
 	local champions = {};
 	local orders = {};
+	local monitoredCharacters = {};
+	--
+	local resourcesTotal = 0;
+	--
+	local sealsTotal = 0;
 	--
 	local missionsComplete = 0;
 	local missionsTotal = 0;
@@ -640,10 +672,19 @@ NS.UpdateCharacters = function()
 	for ck,char in ipairs( NS.db["characters"] ) do
 		local passedTime = char["updateTime"] and ( currentTime > char["updateTime"] and ( currentTime - char["updateTime"] ) or 0 ) or nil; -- Characters without an 8.0 Garrison will not have an updateTime
 		--
+		-- Total War Resources & Seals -- (only from monitored characters)
+		--
+		if NS.PairsFindKeyByValue( char["monitor"], true ) then
+			monitoredCharacters[char["name"]] = true;
+			-- These are passed on for the LDB text
+			resourcesTotal = resourcesTotal + char["warResources"];
+			sealsTotal = sealsTotal + char["sealOfWartornFate"];
+		end
+		--
 		-- Seals
 		--
 		seals[char["name"]] = {};
-		if char["seals"]["sealOfWartornFateQuestsCompleted"] then
+		if char["seals"]["sealOfWartornFateQuestsCompleted"] --[[ number - initialized when char reaches level 120 ]] then
 			local s = seals[char["name"]];
 			s.sealOfWartornFate = {
 				text = string.format( L["Seal of Wartorn Fate - %d/%d"], char["sealOfWartornFate"], NS.sealOfWartornFateMax ),
@@ -725,9 +766,38 @@ NS.UpdateCharacters = function()
 		advancement[char["name"]] = {};
 		if char["monitor"]["advancement"] then
 			local wea = advancement[char["name"]];
-			if char["advancement"]["talentBeingResearched"] then
+			--
+			-- SHIFT
+			--
+			wea.shiftText = L["Advancements"];
+			wea.shiftLines = {};
+			--
+			if #char["advancement"]["selectedTalents"] == 0 then
+				-- No talents
+				wea.shiftLines[#wea.shiftLines + 1] = HIGHLIGHT_FONT_COLOR_CODE .. L["No advancements researched"] .. FONT_COLOR_CODE_CLOSE;
+			else
+				-- Selected talents
+				for i = 1, #char["advancement"]["selectedTalents"] do
+					local talent = char["advancement"]["selectedTalents"][i];
+					--
+					if not talent.tier then
+						wea.shiftLines[#wea.shiftLines + 1] = HIGHLIGHT_FONT_COLOR_CODE .. L["No data. Log into character once to fix."] .. FONT_COLOR_CODE_CLOSE;
+						break; -- stop early, no data - OLD VERSION - character pre v1.03
+					end
+					--
+					wea.shiftLines[#wea.shiftLines + 1] = " ";
+					wea.shiftLines[#wea.shiftLines + 1] = "|T" .. talent.icon .. ":20|t " .. HIGHLIGHT_FONT_COLOR_CODE .. talent.name .. FONT_COLOR_CODE_CLOSE;
+					wea.shiftLines[#wea.shiftLines + 1] = { talent.description, nil, nil, nil, true };
+					wea.shiftLines[#wea.shiftLines + 1] = " ";
+					wea.shiftLines[#wea.shiftLines + 1] = BATTLENET_FONT_COLOR_CODE .. string.format( L["Tier %d"], talent.tier ) .. FONT_COLOR_CODE_CLOSE;
+				end
+			end
+			--
+			-- NO-SHIFT
+			--
+			if char["advancement"]["tierBeingResearched"] then
 				advancementsTotal = advancementsTotal + 1; -- All characters
-				local talent = char["advancement"]["talentBeingResearched"];
+				local talent = char["advancement"]["selectedTalents"][char["advancement"]["tierBeingResearched"]];
 				wea.texture = talent.icon;
 				wea.text = "|T" .. talent.icon .. ":20|t " .. HIGHLIGHT_FONT_COLOR_CODE .. talent.name .. FONT_COLOR_CODE_CLOSE;
 				wea.seconds = talent.researchTimeRemaining > passedTime and ( talent.researchTimeRemaining - passedTime ) or 0;
@@ -761,7 +831,7 @@ NS.UpdateCharacters = function()
 					wea.lines[#wea.lines + 1] = string.format( L["Research Time: %s"], HIGHLIGHT_FONT_COLOR_CODE .. SecondsToTime( talent.researchDuration ) ) .. FONT_COLOR_CODE_CLOSE;
 					wea.lines[#wea.lines + 1] = string.format( L["Cost: %s"], HIGHLIGHT_FONT_COLOR_CODE .. BreakUpLargeNumbers( talent.researchCost ) .. FONT_COLOR_CODE_CLOSE .. "|T".. 2032600 ..":0:0:2:0|t" );
 					-- Conditions
-					if char["advancement"]["numTalents"] == 0 then
+					if talent.tier == 1 then
 						-- Level
 						if char["level"] < 114 then
 							wea.condition = RED_FONT_COLOR_CODE .. string.format( ITEM_MIN_LEVEL, 114 ) .. FONT_COLOR_CODE_CLOSE;
@@ -778,12 +848,19 @@ NS.UpdateCharacters = function()
 					end
 				end
 				wea.status = "available";
-			elseif char["advancement"]["numTalents"] == NS.maxAdvancementTiers then
+			elseif #char["advancement"]["selectedTalents"] == NS.maxAdvancementTiers then
 				wea.texture = 133743;
 				wea.text = string.format( L["Advancements - %d/%d"], NS.maxAdvancementTiers, NS.maxAdvancementTiers );
-				wea.lines = HIGHLIGHT_FONT_COLOR_CODE .. L["There are no new tiers available."] .. FONT_COLOR_CODE_CLOSE;
+				wea.lines = {};
+				wea.lines[#wea.lines + 1] = HIGHLIGHT_FONT_COLOR_CODE .. L["No new tiers available."] .. FONT_COLOR_CODE_CLOSE;
 				wea.status = "maxed";
 			end
+			-- [Shift] message
+			if #char["advancement"]["selectedTalents"] > 0 then
+				wea.lines[#wea.lines + 1] = " ";
+				wea.lines[#wea.lines + 1] = BATTLENET_FONT_COLOR_CODE .. L["Hold [Shift] to view selected tiers"] .. FONT_COLOR_CODE_CLOSE;
+			end
+			--
 			wea.color = ( ( wea.status == "available" or wea.status == "maxed" ) and "Gray" ) or ( wea.status == "researching" and ( wea.seconds > 0 and "Red" or "Green" ) ) or nil; -- nil if a character doesn't have their newTalentTier info, since v1.24 the info is recorded regardless of level requirement
 		end
 		--
@@ -796,30 +873,29 @@ NS.UpdateCharacters = function()
 			ch.count = #char["champions"];
 			ch.text = string.format( L["Champions - %d/%d"], #char["champions"], NS.maxChampions );
 			ch.lines = {};
-			ch.lines[#ch.lines + 1] = " "; -- spacer
-			--
-			for i = 1, #char["champions"] do
-				local c = char["champions"][i];
-				local timeLeftSeconds = ( c.timeLeftSeconds and c.timeLeftSeconds >= passedTime ) and ( c.timeLeftSeconds - passedTime ) or 0;
-				local timeLeft = c.timeLeftSeconds and ( BATTLENET_FONT_COLOR_CODE .. "  " .. SecondsToTime( timeLeftSeconds ) .. FONT_COLOR_CODE_CLOSE ) or "";
-				c["lastKnownTimeLeftSeconds"] = timeLeftSeconds; -- Update champion missions for LDB tooltip use
-				--
-				ch.lines[#ch.lines + 1] = "|T" .. c.portraitIconID .. ":32:32|t  " .. ITEM_QUALITY_COLORS[c.quality].hex .. c.name .. FONT_COLOR_CODE_CLOSE .. timeLeft;
-				if c.levelXP and c.levelXP > 0 and c.xp and c.quality < 4 then -- [[ Epic quality is max upgrade ]]
-					ch.lines[#ch.lines + 1] = "|T" .. 136449 --[[ see ArtTextureID.lua ]] .. ":1:32|t  " .. string.format( L["%s%d XP to|r %s"], HIGHLIGHT_FONT_COLOR_CODE, ( c.levelXP - c.xp ), ( ITEM_QUALITY_COLORS[c.quality + 1].hex .. _G["ITEM_QUALITY" .. ( c.quality + 1 ) .. "_DESC"] .. FONT_COLOR_CODE_CLOSE ) );
-					ch.lines[#ch.lines + 1] = " "; -- spacer
-				end
-			end
-			--
 			if #char["champions"] == 0 then
 				ch.lines[#ch.lines + 1] = HIGHLIGHT_FONT_COLOR_CODE .. L["No champions collected"] .. FONT_COLOR_CODE_CLOSE;
+			else
+				ch.lines[#ch.lines + 1] = " "; -- spacer
+				for i = 1, #char["champions"] do
+					local c = char["champions"][i];
+					local timeLeftSeconds = ( c.timeLeftSeconds and c.timeLeftSeconds >= passedTime ) and ( c.timeLeftSeconds - passedTime ) or 0;
+					local timeLeft = c.timeLeftSeconds and ( "  " .. NS.SecondsToStrTime( timeLeftSeconds, BATTLENET_FONT_COLOR_CODE ) ) or "";
+					c["lastKnownTimeLeftSeconds"] = timeLeftSeconds; -- Update champion missions for LDB tooltip use
+					--
+					ch.lines[#ch.lines + 1] = "|T" .. c.portraitIconID .. ":32:32|t  " .. ITEM_QUALITY_COLORS[c.quality].hex .. c.name .. FONT_COLOR_CODE_CLOSE .. timeLeft;
+					if c.levelXP and c.levelXP > 0 and c.xp and c.quality < 4 then -- [[ Epic quality is max upgrade ]]
+						ch.lines[#ch.lines + 1] = "|T" .. 136449 --[[ see ArtTextureID.lua ]] .. ":1:32|t  " .. string.format( L["%s%d XP to|r %s"], HIGHLIGHT_FONT_COLOR_CODE, ( c.levelXP - c.xp ), ( ITEM_QUALITY_COLORS[c.quality + 1].hex .. _G["ITEM_QUALITY" .. ( c.quality + 1 ) .. "_DESC"] .. FONT_COLOR_CODE_CLOSE ) );
+						ch.lines[#ch.lines + 1] = " "; -- spacer
+					end
+				end
 			end
 		end
 		--
 		-- Work Orders
 		--
 		orders[char["name"]] = {};
-		local troopNum = 0; -- Used to increment class specific troop monitor order
+		local troopNum = 0; -- Used to increment multiple troop types for monitor order
 		for _,o in ipairs( char["orders"] ) do -- o is for order
 			if char["monitor"][o["texture"]] then -- Orders use texture as the monitorIndex
 				orders[char["name"]][#orders[char["name"]] + 1] = {};
@@ -854,7 +930,7 @@ NS.UpdateCharacters = function()
 						for i = 1, #char["troops"] do
 							local t = char["troops"][i];
 							local timeLeftSeconds = ( t.timeLeftSeconds and t.timeLeftSeconds >= passedTime ) and ( t.timeLeftSeconds - passedTime ) or 0;
-							local timeLeft = t.timeLeftSeconds and ( BATTLENET_FONT_COLOR_CODE .. "  " .. SecondsToTime( timeLeftSeconds ) .. FONT_COLOR_CODE_CLOSE ) or "";
+							local timeLeft = t.timeLeftSeconds and ( "  " .. NS.SecondsToStrTime( timeLeftSeconds, BATTLENET_FONT_COLOR_CODE ) ) or "";
 							t["lastKnownTimeLeftSeconds"] = timeLeftSeconds; -- Update troop missions for LDB tooltip use
 							--
 							local health = {};
@@ -908,6 +984,11 @@ NS.UpdateCharacters = function()
 	NS.allCharacters.advancement = CopyTable( advancement );
 	NS.allCharacters.champions = CopyTable( champions );
 	NS.allCharacters.orders = CopyTable( orders );
+	NS.allCharacters.monitoredCharacters = CopyTable( monitoredCharacters );
+	--
+	NS.allCharacters.resourcesTotal = resourcesTotal;
+	--
+	NS.allCharacters.sealsTotal = sealsTotal;
 	--
 	NS.allCharacters.missionsComplete = missionsComplete;
 	NS.allCharacters.missionsTotal = missionsTotal;
@@ -939,11 +1020,24 @@ NS.UpdateLDB = function()
 	local advancementsTooltip = { label = L["Advancements"], lines = {} };
 	local ordersTooltip = { label = L["Troops"], lines = {} };
 	--
-	local resourcesLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. L["Resources"] .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
-	local resourcesText = NS.db["ldbSource"] == "current" and ( HIGHLIGHT_FONT_COLOR_CODE .. NS.db["characters"][NS.currentCharacter.key]["warResources"] .. FONT_COLOR_CODE_CLOSE ) or nil;
+	local hoaLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. ( NS.db["ldbUseLetterLabels"] and L["H"] or L["HoA"] ) .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
+	local hoaText = NS.db["ldbSource"] == "current" and char["hoaLevel"] > 0 and ( ITEM_QUALITY_COLORS[6].hex .. char["hoaLevel"] .. "(" .. char["apPercent"] .. "%)" .. FONT_COLOR_CODE_CLOSE ) or nil;
 	--
-	local sealsLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. L["Seals"] .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
-	local sealsText = NS.db["ldbSource"] == "current" and ( HIGHLIGHT_FONT_COLOR_CODE .. NS.db["characters"][NS.currentCharacter.key]["sealOfWartornFate"] .. FONT_COLOR_CODE_CLOSE ) or nil;
+	local resourcesLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. ( NS.db["ldbUseLetterLabels"] and L["R"] or L["Resources"] ) .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
+	local resourcesText;
+	if NS.db["ldbSource"] == "current" and NS.allCharacters.monitoredCharacters[char["name"]] then
+		resourcesText = HIGHLIGHT_FONT_COLOR_CODE .. char["warResources"] .. FONT_COLOR_CODE_CLOSE;
+	elseif NS.db["ldbSource"] == "all" then
+		resourcesText = HIGHLIGHT_FONT_COLOR_CODE .. NS.allCharacters.resourcesTotal .. FONT_COLOR_CODE_CLOSE;
+	end
+	--
+	local sealsLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. ( NS.db["ldbUseLetterLabels"] and L["S"] or L["Seals"] ) .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
+	local sealsText;
+	if NS.db["ldbSource"] == "current" and NS.allCharacters.monitoredCharacters[char["name"]] then
+		sealsText = HIGHLIGHT_FONT_COLOR_CODE .. char["sealOfWartornFate"] .. FONT_COLOR_CODE_CLOSE;
+	elseif NS.db["ldbSource"] == "all" then
+		sealsText = HIGHLIGHT_FONT_COLOR_CODE .. NS.allCharacters.sealsTotal .. FONT_COLOR_CODE_CLOSE;
+	end
 	----------------------------------------------------------------------------------------------------------------------------------------
 	-- (Current) Character Tooltip
 	----------------------------------------------------------------------------------------------------------------------------------------
@@ -951,7 +1045,9 @@ NS.UpdateLDB = function()
 		-- Header
 		headerTooltip.lines[#headerTooltip.lines + 1] = {
 			--[[ Character Name ]]( "|c" .. RAID_CLASS_COLORS[NS.currentCharacter.class].colorStr .. ( NS.db["showCharacterRealms"] and NS.currentCharacter.name or strsplit( "-", NS.currentCharacter.name, 2 ) ) .. FONT_COLOR_CODE_CLOSE ),
-			--[[ War Resources, Seal of Wartorn Fate ]]( HIGHLIGHT_FONT_COLOR_CODE .. NS.db["characters"][NS.currentCharacter.key]["warResources"] .. FONT_COLOR_CODE_CLOSE .. "|T" .. 2032600 .. ":16:16:3:0|t" ) .. ( NS.allCharacters.seals[NS.currentCharacter.name].sealOfWartornFate and ( "   " .. HIGHLIGHT_FONT_COLOR_CODE .. NS.db["characters"][NS.currentCharacter.key]["sealOfWartornFate"] .. FONT_COLOR_CODE_CLOSE .. "|T" .. 1416740 .. ":16:16:3:0|t" ) or "" ),
+			--[[ War Resources ]]( HIGHLIGHT_FONT_COLOR_CODE .. char["warResources"] .. FONT_COLOR_CODE_CLOSE .. "|T" .. 2032600 .. ":16:16:3:0|t" ) ..
+			--[[ Seal of Wartorn Fate ]]( NS.allCharacters.seals[NS.currentCharacter.name].sealOfWartornFate and ( "   " .. HIGHLIGHT_FONT_COLOR_CODE .. char["sealOfWartornFate"] .. FONT_COLOR_CODE_CLOSE .. "|T" .. 1416740 .. ":16:16:3:0|t" ) or "" ) ..
+			--[[ Heart of Azeroth Level ]]( "   " .. NORMAL_FONT_COLOR_CODE .. char["hoaLevel"] .. FONT_COLOR_CODE_CLOSE .. "|T" .. 1869493 .. ":16:16:3:0:64:64:10:60:10:60|t" ),
 			"GameFontNormalLarge",
 		};
 		-- Missions
@@ -992,7 +1088,7 @@ NS.UpdateLDB = function()
 			ac = ( advancement.seconds and advancement.seconds == 0 and 1 ) or 0;
 			at = advancement.seconds and 1 or 0;
 			natr = advancement.seconds and advancement.seconds;
-			ari = ( advancement.status == "researching" and char["advancement"]["talentBeingResearched"] ) or
+			ari = ( advancement.status == "researching" and char["advancement"]["tierBeingResearched"] and char["advancement"]["selectedTalents"][char["advancement"]["tierBeingResearched"]] ) or
 			( advancement.status == "available" and { icon = char["advancement"]["newTalentTier"][1].icon, name = string.format( L["%sNew!|r Tier %d: %s"], GREEN_FONT_COLOR_CODE, char["advancement"]["newTalentTier"][1].tier, ( HIGHLIGHT_FONT_COLOR_CODE .. SecondsToTime( char["advancement"]["newTalentTier"][1].researchDuration ) .. " - " .. BreakUpLargeNumbers( char["advancement"]["newTalentTier"][1].researchCost ) .. FONT_COLOR_CODE_CLOSE .. "|T" .. 2032600 ..":0:0:2:0|t" ) ) } ) or
 			( advancement.status == "maxed" and { icon = advancement.texture, name = ( GRAY_FONT_COLOR_CODE .. L["No new tiers available"] .. FONT_COLOR_CODE_CLOSE ) } );
 		end
@@ -1093,14 +1189,14 @@ NS.UpdateLDB = function()
 		mt = NS.allCharacters.missionsTotal;
 		nmtr = NS.allCharacters.nextMissionTimeRemaining;
 	end
-	local missionsLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. L["Missions"] .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
+	local missionsLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. ( NS.db["ldbUseLetterLabels"] and L["M"] or L["Missions"] ) .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
 	local missionsText;
 	if mt == 0 then
 		-- Text
-		missionsText = ( NS.db["ldbShowWhenNone"] and ( mm or NS.db["ldbSource"] == "all" ) and ( GRAY_FONT_COLOR_CODE .. L["None"] .. FONT_COLOR_CODE_CLOSE ) ) or nil;
+		missionsText = ( NS.db["ldbShowWhenNone"] and ( mm or NS.db["ldbSource"] == "all" ) and ( GRAY_FONT_COLOR_CODE .. ( NS.db["ldbNumbersOnly"] and 0 or L["None"] ) .. FONT_COLOR_CODE_CLOSE ) ) or nil;
 	elseif mc == mt then
 		-- Text
-		missionsText = GREEN_FONT_COLOR_CODE .. mt .. " " .. L["Ready"] .. FONT_COLOR_CODE_CLOSE;
+		missionsText = GREEN_FONT_COLOR_CODE .. mt .. ( NS.db["ldbNumbersOnly"] and "" or " " .. L["Ready"] ) .. FONT_COLOR_CODE_CLOSE;
 	else
 		-- Text
 		missionsText = HIGHLIGHT_FONT_COLOR_CODE .. mc .. "/" .. mt .. FONT_COLOR_CODE_CLOSE;
@@ -1130,14 +1226,14 @@ NS.UpdateLDB = function()
 		at = NS.allCharacters.advancementsTotal;
 		natr = NS.allCharacters.nextAdvancementTimeRemaining;
 	end
-	local advancementsLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. L["Advancements"] .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
+	local advancementsLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. ( NS.db["ldbUseLetterLabels"] and L["A"] or L["Advancements"] ) .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
 	local advancementsText;
 	if at == 0 then
 		-- Text
-		advancementsText = NS.db["ldbShowWhenNone"] and ( am or NS.db["ldbSource"] == "all" ) and ( GRAY_FONT_COLOR_CODE .. L["None"] .. FONT_COLOR_CODE_CLOSE ) or nil;
+		advancementsText = NS.db["ldbShowWhenNone"] and ( am or NS.db["ldbSource"] == "all" ) and ( GRAY_FONT_COLOR_CODE .. ( NS.db["ldbNumbersOnly"] and 0 or L["None"] ) .. FONT_COLOR_CODE_CLOSE ) or nil;
 	elseif ac == at then
 		-- Text
-		advancementsText = GREEN_FONT_COLOR_CODE .. ( NS.db["ldbSource"] == "current" and "" or ( at .. " " ) ) .. L["Ready"] .. FONT_COLOR_CODE_CLOSE;
+		advancementsText = GREEN_FONT_COLOR_CODE .. ( NS.db["ldbSource"] == "current" and ( NS.db["ldbNumbersOnly"] and 1 or "" ) or ( at .. ( NS.db["ldbNumbersOnly"] and "" or " " ) ) ) .. ( NS.db["ldbNumbersOnly"] and "" or L["Ready"] ) .. FONT_COLOR_CODE_CLOSE;
 	else
 		-- Text
 		advancementsText = HIGHLIGHT_FONT_COLOR_CODE .. ( NS.db["ldbSource"] == "current" and SecondsToTime( natr, false, false, 1 ) or ( ac .. "/" .. at ) ) .. FONT_COLOR_CODE_CLOSE;
@@ -1167,14 +1263,14 @@ NS.UpdateLDB = function()
 		ot = NS.allCharacters.workOrdersTotal;
 		notr = NS.allCharacters.nextWorkOrderTimeRemaining;
 	end
-	local ordersLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. L["Orders"] .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
+	local ordersLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. ( NS.db["ldbUseLetterLabels"] and L["O"] or L["Orders"] ) .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
 	local ordersText;
 	if ot == 0 then
 		-- Text
-		ordersText = NS.db["ldbShowWhenNone"] and ( om or NS.db["ldbSource"] == "all" ) and ( GRAY_FONT_COLOR_CODE .. L["None"] .. FONT_COLOR_CODE_CLOSE ) or nil;
+		ordersText = NS.db["ldbShowWhenNone"] and ( om or NS.db["ldbSource"] == "all" ) and ( GRAY_FONT_COLOR_CODE .. ( NS.db["ldbNumbersOnly"] and 0 or L["None"] ) .. FONT_COLOR_CODE_CLOSE ) or nil;
 	elseif oc == ot then
 		-- Text
-		ordersText = GREEN_FONT_COLOR_CODE .. ot .. " " .. L["Ready"] .. FONT_COLOR_CODE_CLOSE;
+		ordersText = GREEN_FONT_COLOR_CODE .. ot .. ( NS.db["ldbNumbersOnly"] and "" or " " .. L["Ready"] ) .. FONT_COLOR_CODE_CLOSE;
 	else
 		-- Text
 		ordersText = HIGHLIGHT_FONT_COLOR_CODE .. oc .. "/" .. ot .. FONT_COLOR_CODE_CLOSE;
@@ -1191,7 +1287,7 @@ NS.UpdateLDB = function()
 	-- Icon
 	NS.ldb.icon = NS.db["ldbSource"] == "current" and NS.currentCharacter.factionIcon or 2032600;
 	-- Text Format
-	local textFormat = { "missions", "advancements", "orders", "resources", "seals" };
+	local textFormat = { "missions", "advancements", "orders", "hoa", "resources", "seals" };
 	local i = 1;
 	while i <= #textFormat do
 		if textFormat[i] == "missions" then
@@ -1200,6 +1296,8 @@ NS.UpdateLDB = function()
 			textFormat[i] = advancementsText and NS.db["ldbShowAdvancements"] and ( advancementsLabel .. advancementsText ) or "remove";
 		elseif textFormat[i] == "orders" then
 			textFormat[i] = ordersText and NS.db["ldbShowOrders"] and ( ordersLabel .. ordersText ) or "remove";
+		elseif textFormat[i] == "hoa" then
+			textFormat[i] = hoaText and NS.db["ldbShowHOA"] and ( hoaLabel .. hoaText ) or "remove";
 		elseif textFormat[i] == "resources" then
 			textFormat[i] = resourcesText and NS.db["ldbShowResources"] and ( resourcesLabel .. resourcesText ) or "remove";
 		elseif textFormat[i] == "seals" then
@@ -1249,7 +1347,8 @@ NS.UpdateAll = function( forceUpdate )
 		WCCEventsFrame:RegisterEvent( "GARRISON_TALENT_COMPLETE" ); -- Troops and Advancement
 		WCCEventsFrame:RegisterEvent( "GARRISON_TALENT_UPDATE" ); -- Troops and Advancement
 		WCCEventsFrame:RegisterEvent( "GARRISON_SHOW_LANDING_PAGE" ); -- Troops
-		WCCEventsFrame:RegisterEvent( "PLAYER_XP_UPDATE" ); -- Fires when player gains XP through quests or killing
+		WCCEventsFrame:RegisterEvent( "PLAYER_XP_UPDATE" ); -- Fires when player gains XP
+		WCCEventsFrame:RegisterEvent( "AZERITE_ITEM_EXPERIENCE_CHANGED" ); -- Fires when player gains AP
 		WCCEventsFrame:RegisterEvent( "PLAYER_LEVEL_UP" ); -- Fires when player levels up, duh
 	end
 	-- LDB
@@ -1510,9 +1609,16 @@ NS.Frame( "WCCEventsFrame", UIParent, {
 			-- PLAYER_LOGOUT
 			--------------------------------------------------------------------------------------------------------------------------------
 			NS.db["characters"][NS.currentCharacter.key]["isRested"] = UnitLevel( "player" ) ~= 120 and ( IsResting() or GetXPExhaustion() > 0 ) or false;
+		elseif event == "MODIFIER_STATE_CHANGED" then
+			--------------------------------------------------------------------------------------------------------------------------------
+			-- MODIFIER_STATE_CHANGED
+			--------------------------------------------------------------------------------------------------------------------------------
+			if GetMouseFocus() == NS.TooltipMonitorButton then
+				NS.TooltipMonitorButton:GetScript( "OnEnter" )( NS.TooltipMonitorButton ); -- Updates tooltip to help show all selected Advancements
+			end
 		else
 			--------------------------------------------------------------------------------------------------------------------------------
-			-- ??? {REQUEST} -- This catches all other events which should request an update. Including player level up and troops.
+			-- ??? {REQUEST} -- This catches all other events which should request an update. Including player level up, xp/ap, and troops.
 			--------------------------------------------------------------------------------------------------------------------------------
 			if C_Garrison.HasGarrison( LE_GARRISON_TYPE_8_0 ) then
 				if NS.initialized then

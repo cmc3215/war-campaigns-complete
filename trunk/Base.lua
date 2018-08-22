@@ -627,7 +627,7 @@ NS.SecondsToStrTime = function( seconds, colorCode )
     local remainingSeconds = minuteSeconds % secondsInAMinute;
     local seconds = math.ceil( remainingSeconds );
 	--
-	local strTime = ( days > 0 and hours == 0 and days .. " day" ) or ( days > 0 and days .. " day " .. hours .. " hr" ) or ( hours > 0 and minutes == 0 and hours .. " hr" ) or ( hours > 0 and hours .. " hr " .. minutes .. " min" ) or ( minutes > 0 and minutes .. " min" ) or seconds .. " sec";
+	local strTime = ( days > 0 and hours == 0 and days .. " Day" ) or ( days > 0 and days .. " Day " .. hours .. " Hr" ) or ( hours > 0 and minutes == 0 and hours .. " Hr" ) or ( hours > 0 and hours .. " Hr " .. minutes .. " Min" ) or ( minutes > 0 and minutes .. " Min" ) or seconds .. " sec";
 	return colorCode and ( colorCode .. strTime .. "|r" ) or strTime;
 end
 --
@@ -635,6 +635,7 @@ NS.StrTimeToSeconds = function( str )
 	if not str then return 0; end
 	local t1, i1, t2, i2 = strsplit( " ", str ); -- x day   -   x day x hr   -   x hr y min   -   x hr   -   x min   -   x sec
 	local M = function( i )
+		i = string.lower( i );
 		if i == "hr" then
 			return 3600;
 		elseif i == "min" then
@@ -710,6 +711,16 @@ end
 NS.FindKeyByValue = function( t, v )
 	if not v then return nil end
 	for k = 1, #t do
+		if t[k] == v then
+			return k;
+		end
+	end
+	return nil;
+end
+--
+NS.PairsFindKeyByValue = function( t, v )
+	if not v then return nil end
+	for k,_ in pairs( t ) do
 		if t[k] == v then
 			return k;
 		end

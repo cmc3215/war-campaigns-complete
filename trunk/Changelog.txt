@@ -1,3 +1,14 @@
+**1.03**
+
+- Release date: 08/22/2018
+- Added the Heart of Azeroth level on the monitor tab, tooltip, and LDB text (requires logging onto character first).
+- New columns for XP and AP (Artifact Power %).
+- Holding Shift while mousing over an Advancement button on the Monitor tab will now list all your selected tiers.
+- New LDB option: Heart of Azeroth - shows level and AP.
+- New LDB option: Use Letter Labels (e.g. M).
+- New LDB option: Numbers Only (e.g. 1 not 1 Ready).
+- Bug fixed: Resources and Seals were not showing on LDB text when "All Characters" was chosen.
+
 **1.02**
 
 - Release date: 08/19/2018

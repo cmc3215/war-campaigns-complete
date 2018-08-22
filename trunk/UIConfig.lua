@@ -9,7 +9,7 @@ local L = NS.localization;
 NS.UI.cfg = {
 	--
 	mainFrame = {
-		width		= 527,
+		width		= 576,
 		height		= 536,
 		portrait	= true,
 		frameStrata	= "MEDIUM",
@@ -45,17 +45,27 @@ NS.UI.cfg = {
 			Init			= function( SubFrame )
 				NS.Button( "NameColumnHeaderButton", SubFrame, NAME, {
 					template = "WCCColumnHeaderButtonTemplate",
-					size = { ( 150 + 2 + 8 ), 19 },
+					size = { ( 162 + 2 + 8 ), 19 },
 					setPoint = { "TOPLEFT", "$parent", "TOPLEFT", -2, 0 },
 				} );
 				NS.Button( "LvlColumnHeaderButton", SubFrame, "" .. L["Lvl"], {
 					template = "WCCColumnHeaderButtonTemplate",
-					size = { ( 54 + 2 + 8 ), 19 },
+					size = { ( 40 + 2 + 8 ), 19 },
+					setPoint = { "TOPLEFT", "#sibling", "TOPRIGHT", -2, 0 },
+				} );
+				NS.Button( "XPColumnHeaderButton", SubFrame, "" .. L["XP"], {
+					template = "WCCColumnHeaderButtonTemplate",
+					size = { ( 40 + 2 + 8 ), 19 },
+					setPoint = { "TOPLEFT", "#sibling", "TOPRIGHT", -2, 0 },
+				} );
+				NS.Button( "APColumnHeaderButton", SubFrame, "" .. L["AP"], {
+					template = "WCCColumnHeaderButtonTemplate",
+					size = { ( 40 + 2 + 8 ), 19 },
 					setPoint = { "TOPLEFT", "#sibling", "TOPRIGHT", -2, 0 },
 				} );
 				NS.Button( "ButtonsColumnHeaderButton", SubFrame, "" .. L["Missions, Advancements, Followers"], {
 					template = "WCCColumnHeaderButtonTemplate",
-					size = { ( 260 + 2 + 0 ), 19 },
+					size = { ( 216 + 2 + 0 ), 19 },
 					setPoint = { "TOPLEFT", "#sibling", "TOPRIGHT", -2, 0 },
 				} );
 				NS.Button( "RefreshButton", SubFrame, nil, {
@@ -85,7 +95,7 @@ NS.UI.cfg = {
 					justifyH = "CENTER",
 				} );
 				NS.ScrollFrame( "ScrollFrame", SubFrame, {
-					size = { 480, ( 50 * NS.db["monitorRows"] - 5 ) },
+					size = { 530, ( 50 * NS.db["monitorRows"] - 5 ) },
 					setPoint = { "TOPLEFT", "$parentNameColumnHeaderButton", "BOTTOMLEFT", 1, -3 },
 					buttonTemplate = "WCCMonitorTabScrollFrameButtonTemplate",
 					update = {
@@ -93,21 +103,15 @@ NS.UI.cfg = {
 						buttonHeight = 50,
 						alwaysShowScrollBar = true,
 						UpdateFunction = function( sf )
-							local monitorMax = 5; -- Number of monitor buttons in XML template
+							local monitorMax = 4; -- Number of monitor buttons in XML template
 							local currentTime = time(); -- Time used in status calculation
 							--------------------------------------------------------------------------------------------------------------------------------------------
 							-- Add characters monitoring at least one into items for ScrollFrame
 							--------------------------------------------------------------------------------------------------------------------------------------------
 							local items = {};
 							for _,char in ipairs( NS.db["characters"] ) do
-								local monitoring = 0; -- Init monitoring count
-								for _,monitor in pairs( char["monitor"] ) do
-									if monitor then
-										monitoring = monitoring + 1;
-									end
-								end
 								-- Monitoring?
-								if monitoring > 0 then
+								if NS.PairsFindKeyByValue( char["monitor"], true ) then
 									if NS.db["currentCharacterFirst"] and char["name"] == NS.currentCharacter.name then
 										-- Force current character to beginning of items
 										local t = { char };
@@ -134,14 +138,7 @@ NS.UI.cfg = {
 								if k <= numItems then
 									-- Functions
 									local MonitorButton_OnEnter = function( self, text, lines )
-										GameTooltip:SetOwner( self, "ANCHOR_RIGHT" );
-										GameTooltip:SetText( text );
-										NS.AddLinesToTooltip( lines, false, GameTooltip );
-										GameTooltip:Show();
-										b:LockHighlight();
-									end
-									--
-									local SealButton_OnEnter = function( self, text, lines )
+										NS.TooltipMonitorButton = self;
 										GameTooltip:SetOwner( self, "ANCHOR_RIGHT" );
 										GameTooltip:SetText( text );
 										NS.AddLinesToTooltip( lines, false, GameTooltip );
@@ -150,6 +147,8 @@ NS.UI.cfg = {
 									end
 									--
 									local OnLeave = function( self )
+										NS.TooltipMonitorButton = nil;
+										WCCEventsFrame:UnregisterEvent( "MODIFIER_STATE_CHANGED" );
 										GameTooltip_Hide();
 										b:UnlockHighlight();
 									end
@@ -168,7 +167,7 @@ NS.UI.cfg = {
 									_G[bn .. "Character"]:SetScript( "OnEnter", function() b:LockHighlight(); end );
 									_G[bn .. "Character"]:SetScript( "OnLeave", OnLeave );
 									--------------------------------------------------------------------------------------------------------------------------------------------
-									-- War Resources & Seal of Wartorn Fate
+									-- War Resources, Seal of Wartorn Fate, and Heart of Azeroth Level
 									--------------------------------------------------------------------------------------------------------------------------------------------
 									_G[bn .. "CurrencyWarResourcesText"]:SetText( items[k]["warResources"] .. "|T" .. 2032600 .. ":16:16:3:0|t" );
 									_G[bn .. "CurrencyWarResources"]:SetScript( "OnClick", OnClick );
@@ -179,24 +178,37 @@ NS.UI.cfg = {
 									if seals.sealOfWartornFate then
 										_G[bn .. "CurrencySealOfWartornFateText"]:SetText( items[k]["sealOfWartornFate"] .. "|T" .. 1416740 .. ":16:16:3:0|t" );
 										_G[bn .. "CurrencySealOfWartornFate"]:SetScript( "OnClick", OnClick );
-										_G[bn .. "CurrencySealOfWartornFate"]:SetScript( "OnEnter", function( self ) SealButton_OnEnter( self, seals.sealOfWartornFate.text, seals.sealOfWartornFate.lines ); end );
+										_G[bn .. "CurrencySealOfWartornFate"]:SetScript( "OnEnter", function( self ) MonitorButton_OnEnter( self, seals.sealOfWartornFate.text, seals.sealOfWartornFate.lines ); end );
 										_G[bn .. "CurrencySealOfWartornFate"]:SetScript( "OnLeave", OnLeave );
 										_G[bn .. "CurrencySealOfWartornFate"]:Show();
 									else
 										_G[bn .. "CurrencySealOfWartornFate"]:Hide();
 									end
 									--------------------------------------------------------------------------------------------------------------------------------------------
-									-- Lvl, XPPct
+									_G[bn .. "CurrencyHoALevelText"]:SetText( NORMAL_FONT_COLOR_CODE .. ( items[k]["hoaLevel"] or "??" ) .. FONT_COLOR_CODE_CLOSE .. "|T" .. 1869493 .. ":16:16:3:0:64:64:10:60:10:60|t" );
+									_G[bn .. "CurrencyHoALevel"]:SetScript( "OnClick", OnClick );
+									local hoa = {
+										text = ORDER_HALL_SHAMAN or L["Heart of Azeroth"],
+										lines = HIGHLIGHT_FONT_COLOR_CODE .. string.format( AZERITE_POWER_TOOLTIP_TITLE, ( items[k]["hoaLevel"] or "??" ), ( items[k]["apMax"] and items[k]["apMax"] > 0 and ( items[k]["apMax"] - items[k]["ap"] ) or "??" ) ) .. FONT_COLOR_CODE_CLOSE,
+									};
+									_G[bn .. "CurrencyHoALevel"]:SetScript( "OnEnter", function( self ) MonitorButton_OnEnter( self, hoa.text, hoa.lines ); end );
+									_G[bn .. "CurrencyHoALevel"]:SetScript( "OnLeave", OnLeave );
+									--------------------------------------------------------------------------------------------------------------------------------------------
+									-- Lvl, XP, AP
 									--------------------------------------------------------------------------------------------------------------------------------------------
 									_G[bn .. "LvlText"]:SetText( items[k]["level"] );
-									_G[bn .. "XPPctText"]:SetText( items[k]["level"] < 120 and ( ( items[k]["isRested"] and "|cff4D85E6" or "|cff80528C" ) .. items[k]["xpPercent"] .. "%" .. FONT_COLOR_CODE_CLOSE ) or "" );
+									_G[bn .. "XPPctText"]:SetText( ( items[k]["level"] < 120 and ( items[k]["isRested"] and "|cff4D85E6" or "|cff80528C" ) or GRAY_FONT_COLOR_CODE ) .. items[k]["xpPercent"] .. "%|r" );
+									_G[bn .. "APPctText"]:SetText( ITEM_QUALITY_COLORS[6].hex .. ( items[k]["apPercent"] and items[k]["apPercent"] .. "%" or "??" ) .. "|r" );
+									--------------------------------------------------------------------------------------------------------------------------------------------
+									-- Init Monitor Buttons
 									--------------------------------------------------------------------------------------------------------------------------------------------
 									local monitorNum = 0;
-									local passedTime = currentTime - items[k]["updateTime"]; -- Time passed since character's last update
 									for monitorNum = ( monitorNum + 1 ), monitorMax do
 										_G[bn .. "Monitor" .. monitorNum]:Hide(); -- Hide monitor buttons up to max
 										_G[bn .. "Monitor" .. monitorNum .. "Indicator"]:Show(); -- Show indicator because it's hidden at Champions
 									end
+									--------------------------------------------------------------------------------------------------------------------------------------------
+									local passedTime = currentTime - items[k]["updateTime"]; -- Time passed since character's last update
 									--------------------------------------------------------------------------------------------------------------------------------------------
 									-- Missions
 									--------------------------------------------------------------------------------------------------------------------------------------------
@@ -223,7 +235,10 @@ NS.UI.cfg = {
 									if next( advancement ) then
 										monitorNum = NS.FindKeyByValue( NS.db["monitorColumn"], "advancement" );
 										_G[bn .. "Monitor" .. monitorNum]:SetNormalTexture( advancement.texture );
-										_G[bn .. "Monitor" .. monitorNum]:SetScript( "OnEnter", function( self ) MonitorButton_OnEnter( self, advancement.text, advancement.lines ); end );
+										_G[bn .. "Monitor" .. monitorNum]:SetScript( "OnEnter", function( self )
+											WCCEventsFrame:RegisterEvent( "MODIFIER_STATE_CHANGED" );
+											local shift = IsShiftKeyDown();
+											MonitorButton_OnEnter( self, ( shift and advancement.shiftText or advancement.text ), ( shift and advancement.shiftLines or advancement.lines ) ); end );
 										_G[bn .. "Monitor" .. monitorNum]:SetScript( "OnLeave", OnLeave );
 										_G[bn .. "Monitor" .. monitorNum .. "TopRightText"]:SetText( "" );
 										_G[bn .. "Monitor" .. monitorNum .. "CenterText"]:SetText( ( advancement.color == "Red" and SecondsToTime( advancement.seconds, false, false, 1 ) ) or "" );
@@ -297,23 +312,24 @@ NS.UI.cfg = {
 					justifyV = "MIDDLE",
 				} );
 				local FooterFrame = NS.Frame( "Footer", SubFrame, {
-					size = { 508, ( 32 + 8 + 8 ) },
+					size = { 558, ( 32 + 8 + 8 ) },
 					setPoint = { "BOTTOM", "$parent", "BOTTOM", 0, 0 },
 					bg = { "Interface\\Garrison\\GarrisonMissionUIInfoBoxBackgroundTile", true, true },
 					bgSetAllPoints = true,
 				} );
-				--
+				-- ( 558 - 32 ) = 526, 526 / 3 = ~175, , 175 * 3 = 525
+				-- 526 - 525 = 1 leftover pixel(s) (spread over padding for 3 frames as 9's instead of 8's)
 				local MissionsReportFrame = NS.Frame( "MissionsReport", FooterFrame, {
-					size = { 158, 32 },
+					size = { 175, 32 },
 					setPoint = { "TOPLEFT", "$parent", "TOPLEFT", 8, -8 },
 				} );
 				local AdvancementsReportFrame = NS.Frame( "AdvancementsReport", FooterFrame, {
-					size = { 158, 32 },
+					size = { 175, 32 },
 					setPoint = { "LEFT", "#sibling", "RIGHT", 9, 0 },
 				} );
 				local WorkOrdersReportFrame = NS.Frame( "WorkOrdersReport", FooterFrame, {
-					size = { 158, 32 },
-					setPoint = { "LEFT", "#sibling", "RIGHT", 9, 0 },
+					size = { 175, 32 },
+					setPoint = { "LEFT", "#sibling", "RIGHT", 8, 0 },
 				} );
 				--
 				local MissionsReportButton = NS.Button( "Button", MissionsReportFrame, nil, {
@@ -365,19 +381,19 @@ NS.UI.cfg = {
 				WorkOrdersReportIndicator:SetPoint( "BOTTOMRIGHT", 4.5, -4.5 );
 				--
 				NS.TextFrame( "Right", MissionsReportFrame, "", {
-					size = { ( 158 - 32 - 4 ), 32 },
+					size = { ( 175 - 32 - 4 ), 32 },
 					setPoint = { "LEFT", "$parent", "LEFT", ( 32 + 4 ), 0 },
 					justifyH = "LEFT",
 					fontObject = "GameFontNormalSmall",
 				} );
 				NS.TextFrame( "Right", AdvancementsReportFrame, "", {
-					size = { ( 158 - 32 - 4 ), 32 },
+					size = { ( 175 - 32 - 4 ), 32 },
 					setPoint = { "LEFT", "$parent", "LEFT", ( 32 + 4 ), 0 },
 					justifyH = "LEFT",
 					fontObject = "GameFontNormalSmall",
 				} );
 				NS.TextFrame( "Right", WorkOrdersReportFrame, "", {
-					size = { ( 158 - 32 - 4 ), 32 },
+					size = { ( 175 - 32 - 4 ), 32 },
 					setPoint = { "LEFT", "$parent", "LEFT", ( 32 + 4 ), 0 },
 					justifyH = "LEFT",
 					fontObject = "GameFontNormalSmall",
@@ -510,7 +526,7 @@ NS.UI.cfg = {
 					width = 190,
 				} );
 				NS.ScrollFrame( "ScrollFrame", SubFrame, {
-					size = { 480, ( 40 * 8 - 5 ) },
+					size = { 530, ( 40 * 8 - 5 ) },
 					setPoint = { "TOPLEFT", "$parent", "TOPLEFT", -1, -37 },
 					buttonTemplate = "WCCCharactersTabScrollFrameButtonTemplate",
 					update = {
@@ -1163,33 +1179,61 @@ NS.UI.cfg = {
 					end,
 					db = "ldbShowNextOrderCharacter",
 				} );
-				NS.CheckButton( "ShowResourcesCheckButton", SubFrame, string.format( L["%sResources|r"], "|cff00ff96" ), {
+				NS.CheckButton( "ShowHOACheckButton", SubFrame, string.format( L["%sHeart of Azeroth|r"], "|cff00ff96" ), {
 					setPoint = { "TOPLEFT", "$parentShowNextOrderCheckButton", "BOTTOMLEFT", -24, -1 },
+					OnClick = function( checked )
+						NS.UpdateAll( "forceUpdate" );
+					end,
+					db = "ldbShowHOA",
+				} );
+				NS.CheckButton( "ShowResourcesCheckButton", SubFrame, string.format( L["%sResources|r"], "|cff00ff96" ), {
+					setPoint = { "TOPLEFT", "#sibling", "BOTTOMLEFT", 0, -1 },
 					OnClick = function( checked )
 						NS.UpdateAll( "forceUpdate" );
 					end,
 					db = "ldbShowResources",
 				} );
 				NS.CheckButton( "ShowSealsCheckButton", SubFrame, string.format( L["%sSeals|r"], "|cff00ff96" ), {
-					setPoint = { "TOPLEFT", "#sibling", "BOTTOMLEFT", 0, -1 },
+					setPoint = { "LEFT", "$parentShowResourcesCheckButtonText", "RIGHT", 20, 0 },
 					OnClick = function( checked )
 						NS.UpdateAll( "forceUpdate" );
 					end,
 					db = "ldbShowSeals",
 				} );
 				NS.CheckButton( "ShowLabelsCheckButton", SubFrame, string.format( L["Show Labels (e.g. %sMissions|r)"], NORMAL_FONT_COLOR_CODE ), {
-					setPoint = { "TOPLEFT", "#sibling", "BOTTOMLEFT", 0, -1 },
+					template = "InterfaceOptionsSmallCheckButtonTemplate",
+					setPoint = { "TOPLEFT", "$parentShowResourcesCheckButton", "BOTTOMLEFT", 0, -1 },
 					OnClick = function( checked )
 						NS.UpdateAll( "forceUpdate" );
 					end,
 					db = "ldbShowLabels",
 				} );
+				NS.CheckButton( "UseLetterLabelsCheckButton", SubFrame, string.format( L["Use Letter Labels (e.g. %sM|r)"], NORMAL_FONT_COLOR_CODE ), {
+					template = "InterfaceOptionsSmallCheckButtonTemplate",
+					setPoint = { "LEFT", "$parentShowLabelsCheckButtonText", "RIGHT", 20, 0 },
+					OnClick = function( checked )
+						NS.UpdateAll( "forceUpdate" );
+					end,
+					db = "ldbUseLetterLabels",
+				} );
 				NS.CheckButton( "ShowWhenNoneCheckButton", SubFrame, string.format( L["Show when %sNone|r"], GRAY_FONT_COLOR_CODE ), {
-					setPoint = { "TOPLEFT", "#sibling", "BOTTOMLEFT", 0, -1 },
+					template = "InterfaceOptionsSmallCheckButtonTemplate",
+					setPoint = { "TOPLEFT", "$parentShowLabelsCheckButton", "BOTTOMLEFT", 0, -1 },
 					OnClick = function( checked )
 						NS.UpdateAll( "forceUpdate" );
 					end,
 					db = "ldbShowWhenNone",
+				} );
+				NS.CheckButton( "NumbersOnlyCheckButton", SubFrame, string.format( L["Numbers Only (e.g. %s1|r not %s1 Ready|r)"], GREEN_FONT_COLOR_CODE, GREEN_FONT_COLOR_CODE ), {
+					template = "InterfaceOptionsSmallCheckButtonTemplate",
+					setPoint = {
+						{ "BOTTOM", "#sibling", "BOTTOM", 0, 0 },
+						{ "LEFT", "$parentUseLetterLabelsCheckButton", "LEFT", 0, 0 }
+					},
+					OnClick = function( checked )
+						NS.UpdateAll( "forceUpdate" );
+					end,
+					db = "ldbNumbersOnly",
 				} );
 				NS.TextFrame( "LibDBIconLabel", SubFrame, L["LibDBIcon:"], {
 					size = { 81, 16 },
@@ -1232,10 +1276,13 @@ NS.UI.cfg = {
 				_G[sfn .. "ShowOrdersCheckButton"]:SetChecked( NS.db["ldbShowOrders"] );
 				_G[sfn .. "ShowNextOrderCheckButton"]:SetChecked( NS.db["ldbShowNextOrder"] );
 				_G[sfn .. "ShowNextOrderCharacterCheckButton"]:SetChecked( NS.db["ldbShowNextOrderCharacter"] );
+				_G[sfn .. "ShowHOACheckButton"]:SetChecked( NS.db["ldbShowHOA"] );
 				_G[sfn .. "ShowResourcesCheckButton"]:SetChecked( NS.db["ldbShowResources"] );
 				_G[sfn .. "ShowSealsCheckButton"]:SetChecked( NS.db["ldbShowSeals"] );
 				_G[sfn .. "ShowLabelsCheckButton"]:SetChecked( NS.db["ldbShowLabels"] );
+				_G[sfn .. "UseLetterLabelsCheckButton"]:SetChecked( NS.db["ldbUseLetterLabels"] );
 				_G[sfn .. "ShowWhenNoneCheckButton"]:SetChecked( NS.db["ldbShowWhenNone"] );
+				_G[sfn .. "NumbersOnlyCheckButton"]:SetChecked( NS.db["ldbNumbersOnly"] );
 				_G[sfn .. "HideLibDBIconMinimapButtonCheckButton"]:SetChecked( NS.db["ldbi"].hide );
 				_G[sfn .. "ShowCharacterTooltipLibDBIconMinimapButtonCheckButton"]:SetChecked( NS.db["ldbiShowCharacterTooltip"] );
 			end,
@@ -1315,7 +1362,14 @@ NS.UI.cfg = {
 					},
 					fontObject = "GameFontHighlight",
 				} );
-				NS.TextFrame( "FontColorXP", SubFrame, string.format( L["%s85|r %s25|r  XP colors reflect whether character is resting or has rested XP"], "|cff4D85E6", "|cff80528C" ), {
+				NS.TextFrame( "FontColorXP", SubFrame, string.format( L["%s75|r %s25|r  XP colors reflect whether character is resting or has rested XP"], "|cff4D85E6", "|cff80528C" ), {
+					setPoint = {
+						{ "TOPLEFT", "#sibling", "BOTTOMLEFT", 0, -8 },
+						{ "RIGHT", -8 },
+					},
+					fontObject = "GameFontHighlight",
+				} );
+				NS.TextFrame( "FontColorAP", SubFrame, string.format( L["%s50|r AP color refers to Artifact Power %% to next level"], ITEM_QUALITY_COLORS[6].hex ), {
 					setPoint = {
 						{ "TOPLEFT", "#sibling", "BOTTOMLEFT", 0, -8 },
 						{ "RIGHT", -8 },

@@ -53,7 +53,7 @@
 	<!-- Template -->
 	<Button name="WCCMonitorTabScrollFrameButtonTemplate" hidden="false" virtual="true">
 		<Size>
-			<AbsDimension x="480" y="50"/><!-- Width is all elements combined w/offsets WAS 790-->
+			<AbsDimension x="530" y="50"/><!-- Width is all elements combined w/offsets WAS 790-->
 		</Size>
 		<Layers>
 			<Layer level="BACKGROUND">
@@ -71,7 +71,7 @@
 			<!-- [Character] -->
 			<Button name="$parentCharacter">
 				<Size>
-					<AbsDimension x="150" y="16"/>
+					<AbsDimension x="162" y="16"/>
 				</Size>
 				<Anchors>
 					<Anchor point="TOPLEFT">
@@ -86,19 +86,19 @@
 			<!-- [Currency] -->
 			<Frame name="$parentCurrency">
 				<Size>
-					<AbsDimension x="150" y="16"/>
+					<AbsDimension x="154" y="16"/><!-- 154 = ( 162 - 8 ) keeps text away from RIGHT edge  -->
 				</Size>
 				<Anchors>
 					<Anchor point="BOTTOMLEFT">
 						<Offset>
-							<AbsDimension x="8" y="8"/><!-- keeps text away from edges -->
+							<AbsDimension x="8" y="8"/><!-- keeps text away from LEFT edge -->
 						</Offset>
 					</Anchor>
 				</Anchors>
 				<Frames>
 					<Button name="$parentWarResources">
 						<Size>
-							<AbsDimension x="90" y="16"/>
+							<AbsDimension x="58" y="16"/>
 						</Size>
 						<Anchors>
 							<Anchor point="LEFT"/>
@@ -108,12 +108,26 @@
 					</Button>
 					<Button name="$parentSealOfWartornFate">
 						<Size>
-							<AbsDimension x="44" y="16"/><!-- 44 = ( 60 - 16 ) -->
+							<AbsDimension x="40" y="16"/>
 						</Size>
 						<Anchors>
-							<Anchor point="RIGHT">
+							<Anchor point="LEFT" relativeTo="$parentWarResources" relativePoint="RIGHT">
 								<Offset>
-									<AbsDimension x="-16" y="0"/><!-- 8 + 8 double indent to match WarResources -->
+									<AbsDimension x="8" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<ButtonText name="$parentText" justifyH="RIGHT" wordwrap="false" setAllPoints="true"/>
+						<NormalFont style="GameFontHighlight"/>
+					</Button>
+					<Button name="$parentHoALevel">
+						<Size>
+							<AbsDimension x="40" y="16"/>
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="$parentSealOfWartornFate" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="8" y="0"/>
 								</Offset>
 							</Anchor>
 						</Anchors>
@@ -125,12 +139,17 @@
 			<!-- [Lvl] -->
 			<Frame name="$parentLvl">
 				<Size>
-					<AbsDimension x="54" y="16"/>
+					<AbsDimension x="40" y="16"/>
 				</Size>
 				<Anchors>
-					<Anchor point="TOPLEFT" relativeTo="$parentCharacter" relativePoint="TOPRIGHT">
+					<Anchor point="LEFT" relativeTo="$parentCharacter" relativePoint="RIGHT">
 						<Offset>
 							<AbsDimension x="8" y="0"/>
+						</Offset>
+					</Anchor>
+					<Anchor point="BOTTOM" relativeTo="$parentCurrencyHoALevel" relativePoint="BOTTOM">
+						<Offset>
+							<AbsDimension x="0" y="0"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -143,17 +162,30 @@
 			<!-- [XPPct] -->
 			<Frame name="$parentXPPct">
 				<Size>
-					<AbsDimension x="54" y="16"/>
+					<AbsDimension x="40" y="16"/>
 				</Size>
 				<Anchors>
-					<Anchor point="BOTTOM" relativeTo="$parentCurrencyWarResources" relativePoint="BOTTOM">
+					<Anchor point="LEFT" relativeTo="$parentLvl" relativePoint="RIGHT">
 						<Offset>
-							<AbsDimension x="0" y="0"/>
+							<AbsDimension x="8" y="0"/>
 						</Offset>
 					</Anchor>
-					<Anchor point="LEFT" relativeTo="$parentLvl" relativePoint="LEFT">
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="$parentText" inherits="GameFontHighlight" justifyH="LEFT" setAllPoints="true" text=""/>
+					</Layer>
+				</Layers>
+			</Frame>
+			<!-- [APPct] -->
+			<Frame name="$parentAPPct">
+				<Size>
+					<AbsDimension x="40" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parentXPPct" relativePoint="RIGHT">
 						<Offset>
-							<AbsDimension x="0" y="0"/>
+							<AbsDimension x="8" y="0"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -166,12 +198,17 @@
 			<!-- [Monitor] -->
 			<Frame name="$parentMonitor">
 				<Size>
-					<AbsDimension x="260" y="50"/><!-- 260 = ( 44 + 8 ) * 5 -->
+					<AbsDimension x="216" y="50"/><!-- 216 = ( ( 44 + 8 ) * 4 buttons ) + 8 end right padding -->
 				</Size>
 				<Anchors>
-					<Anchor point="TOPLEFT" relativeTo="$parentLvl" relativePoint="TOPRIGHT">
+					<Anchor point="TOP" relativeTo="$parentCharacter" relativePoint="TOP">
 						<Offset>
 							<AbsDimension x="0" y="8"/>
+						</Offset>
+					</Anchor>
+					<Anchor point="LEFT" relativeTo="$parentAPPct" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="0" y="0"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -296,36 +333,6 @@
 							</Layer>
 						</Layers>
 					</Button>
-					<Button name="$parent5">
-						<Size>
-							<AbsDimension x="44" y="44"/>
-						</Size>
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="$parent4" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="8" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<Layers>
-							<Layer level="OVERLAY">
-								<FontString name="$parentTopRightText" inherits="NumberFontNormal" justifyH="RIGHT" justifyV="TOP" setAllPoints="true" text=""/>
-								<FontString name="$parentCenterText" inherits="NumberFontNormalLarge" justifyH="CENTER" setAllPoints="true" text=""/>
-								<Texture name="$parentIndicator">
-									<Size>
-										<AbsDimension x="20" y="20"/>
-									</Size>
-									<Anchors>
-										<Anchor point="BOTTOMRIGHT">
-											<Offset>
-												<AbsDimension x="4.5" y="-4.5"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-								</Texture>
-							</Layer>
-						</Layers>
-					</Button>
 				</Frames>
 			</Frame>
 		</Frames>
@@ -337,7 +344,7 @@
 	<!-- Template -->
 	<Button name="WCCCharactersTabScrollFrameButtonTemplate" hidden="false" virtual="true">
 		<Size>
-			<AbsDimension x="480" y="40"/><!-- Width is LESS THAN all elements combined w/offsets -->
+			<AbsDimension x="530" y="40"/><!-- Width is LESS THAN all elements combined w/offsets -->
 		</Size>
 		<!-- Frames -->
 		<Frames>
@@ -357,7 +364,7 @@
 			<!-- [Name] -->
 			<Frame name="$parent_Name">
 				<Size>
-					<AbsDimension x="394" y="40"/><!-- 394 = ( 398 - 4 ) remove 4 here to give checkbox some room -->
+					<AbsDimension x="444" y="40"/><!-- 444 = ( 448 - 4 ) remove 4 here to give checkbox some room -->
 				</Size>
 				<Anchors>
 					<Anchor point="LEFT" relativeTo="$parent_IconTexture" relativePoint="RIGHT">
