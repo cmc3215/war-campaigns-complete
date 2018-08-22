@@ -1,0 +1,27 @@
+**1.03**
+
+- Release date: 08/22/2018
+- Added the Heart of Azeroth level on the monitor tab, tooltip, and LDB text (requires logging onto character first).
+- New columns for XP and AP (Artifact Power %).
+- Holding Shift while mousing over an Advancement button on the Monitor tab will now list all your selected tiers.
+- New LDB option: Heart of Azeroth - shows level and AP.
+- New LDB option: Use Letter Labels (e.g. M).
+- New LDB option: Numbers Only (e.g. 1 not 1 Ready).
+- Bug fixed: Resources and Seals were not showing on LDB text when "All Characters" was chosen.
+
+**1.02**
+
+- Release date: 08/19/2018
+- Bug fixed: Advancements were not being tracked properly on Horde characters.
+
+**1.01**
+
+- Release date: 08/19/2018
+- Fixed: Missions icon shows up along with the other icons when player is flagged as having an 8.0 Garrison.
+- Reorganized the LDB text format dropdown menu into checkboxes for simplicity and flexibility.
+- Added "Resources" (War Resources) and "Seals" (Seal of Wartorn Fate) as an optional display in the LDB data source.
+
+**1.0**
+
+- Release date: 08/17/2018
+- Initial release.
