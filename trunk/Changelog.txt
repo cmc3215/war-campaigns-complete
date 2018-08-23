@@ -1,3 +1,9 @@
+**1.04**
+
+- Release date: 08/23/2018
+- Bug fixed: Troops total of 4 was not being updated to 6 after researching the tier 2 talent "Upgraded Troop Barracks" (fix requires logging into affected character).
+- Heart of Azeroth, Resources, and Seals for the current character now all show up on the LDB text when "All Characters" is selected. Missions, Advancements, and Orders continue to combined account-wide of course.
+
 **1.03**
 
 - Release date: 08/22/2018

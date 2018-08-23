@@ -1,6 +1,6 @@
 ## Interface: 80000
 ## Title: War Campaigns Complete
-## Version: 1.03
+## Version: 1.04
 ## Author: cmc3215 on CurseForge (Clinton Caldwell)
 ## Notes: Monitors Missions, Advancements, and Followers account-wide.
 ## SavedVariables: WARCAMPAIGNSCOMPLETE_SAVEDVARIABLES
