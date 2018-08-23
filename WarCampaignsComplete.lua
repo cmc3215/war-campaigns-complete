@@ -4,7 +4,7 @@
 local NS = select( 2, ... );
 local L = NS.localization;
 NS.releasePatch = "8.0.1";
-NS.versionString = "1.03";
+NS.versionString = "1.04";
 NS.version = tonumber( NS.versionString );
 --
 NS.initialized = false;
@@ -473,7 +473,7 @@ NS.UpdateCharacter = function()
 				-- Data
 				local troops = {};
 				local champions = {};
-				local troopCapacity = 4 + ( talentTiers[2] and not talentTiers[2].isBeingResearched and talentTiers[2].id == 549 --[[ Upgraded Troop Barracks ]] and 2 or 0 );
+				local troopCapacity = 4 + ( talentTiers[2] and not talentTiers[2].isBeingResearched and talentTiers[2].id == 553 --[[ Upgraded Troop Barracks ]] and 2 or 0 ); -- 549
 				local followers = C_Garrison.GetFollowers( LE_FOLLOWER_TYPE_GARRISON_8_0 );
 				char["troopsUnlocked"] = IsQuestFlaggedCompleted( 51771 ) --[[ Horde ]] or IsQuestFlaggedCompleted( 51715 ) --[[ Alliance ]] or false;
 				if followers and #followers > 0 then
@@ -641,10 +641,6 @@ NS.UpdateCharacters = function()
 	local orders = {};
 	local monitoredCharacters = {};
 	--
-	local resourcesTotal = 0;
-	--
-	local sealsTotal = 0;
-	--
 	local missionsComplete = 0;
 	local missionsTotal = 0;
 	local nextMissionTimeRemaining = 0; -- Lowest time remaining for a mission to complete.
@@ -676,9 +672,6 @@ NS.UpdateCharacters = function()
 		--
 		if NS.PairsFindKeyByValue( char["monitor"], true ) then
 			monitoredCharacters[char["name"]] = true;
-			-- These are passed on for the LDB text
-			resourcesTotal = resourcesTotal + char["warResources"];
-			sealsTotal = sealsTotal + char["sealOfWartornFate"];
 		end
 		--
 		-- Seals
@@ -986,10 +979,6 @@ NS.UpdateCharacters = function()
 	NS.allCharacters.orders = CopyTable( orders );
 	NS.allCharacters.monitoredCharacters = CopyTable( monitoredCharacters );
 	--
-	NS.allCharacters.resourcesTotal = resourcesTotal;
-	--
-	NS.allCharacters.sealsTotal = sealsTotal;
-	--
 	NS.allCharacters.missionsComplete = missionsComplete;
 	NS.allCharacters.missionsTotal = missionsTotal;
 	NS.allCharacters.nextMissionTimeRemaining = nextMissionTimeRemaining;
@@ -1021,23 +1010,13 @@ NS.UpdateLDB = function()
 	local ordersTooltip = { label = L["Troops"], lines = {} };
 	--
 	local hoaLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. ( NS.db["ldbUseLetterLabels"] and L["H"] or L["HoA"] ) .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
-	local hoaText = NS.db["ldbSource"] == "current" and char["hoaLevel"] > 0 and ( ITEM_QUALITY_COLORS[6].hex .. char["hoaLevel"] .. "(" .. char["apPercent"] .. "%)" .. FONT_COLOR_CODE_CLOSE ) or nil;
+	local hoaText = char["hoaLevel"] > 0 and ( ITEM_QUALITY_COLORS[6].hex .. char["hoaLevel"] .. "(" .. char["apPercent"] .. "%)" .. FONT_COLOR_CODE_CLOSE ) or nil;
 	--
 	local resourcesLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. ( NS.db["ldbUseLetterLabels"] and L["R"] or L["Resources"] ) .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
-	local resourcesText;
-	if NS.db["ldbSource"] == "current" and NS.allCharacters.monitoredCharacters[char["name"]] then
-		resourcesText = HIGHLIGHT_FONT_COLOR_CODE .. char["warResources"] .. FONT_COLOR_CODE_CLOSE;
-	elseif NS.db["ldbSource"] == "all" then
-		resourcesText = HIGHLIGHT_FONT_COLOR_CODE .. NS.allCharacters.resourcesTotal .. FONT_COLOR_CODE_CLOSE;
-	end
+	local resourcesText = NS.allCharacters.monitoredCharacters[char["name"]] and ( HIGHLIGHT_FONT_COLOR_CODE .. char["warResources"] .. FONT_COLOR_CODE_CLOSE ) or nil;
 	--
 	local sealsLabel = NS.db["ldbShowLabels"] and ( NORMAL_FONT_COLOR_CODE .. ( NS.db["ldbUseLetterLabels"] and L["S"] or L["Seals"] ) .. ": " .. FONT_COLOR_CODE_CLOSE ) or "";
-	local sealsText;
-	if NS.db["ldbSource"] == "current" and NS.allCharacters.monitoredCharacters[char["name"]] then
-		sealsText = HIGHLIGHT_FONT_COLOR_CODE .. char["sealOfWartornFate"] .. FONT_COLOR_CODE_CLOSE;
-	elseif NS.db["ldbSource"] == "all" then
-		sealsText = HIGHLIGHT_FONT_COLOR_CODE .. NS.allCharacters.sealsTotal .. FONT_COLOR_CODE_CLOSE;
-	end
+	local sealsText = NS.allCharacters.monitoredCharacters[char["name"]] and ( HIGHLIGHT_FONT_COLOR_CODE .. char["sealOfWartornFate"] .. FONT_COLOR_CODE_CLOSE ) or nil;
 	----------------------------------------------------------------------------------------------------------------------------------------
 	-- (Current) Character Tooltip
 	----------------------------------------------------------------------------------------------------------------------------------------

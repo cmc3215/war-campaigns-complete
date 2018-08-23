@@ -1098,6 +1098,7 @@ NS.UI.cfg = {
 						{ L["Current Character"], "current" },
 						{ L["All Characters"], "all" },
 					},
+					tooltip = L["Heart of Azeroth, Resources, and Seals shown\nare always for the current character only."],
 					OnClick = function( info )
 						NS.db["ldbSource"] = info.value;
 						NS.UpdateAll( "forceUpdate" );
