@@ -1,0 +1,17 @@
+## Interface: 80000
+## Title: War Campaigns Complete
+## Version: 1.05
+## Author: cmc3215 on CurseForge (Clinton Caldwell)
+## Notes: Monitors Missions, Advancements, and Followers account-wide.
+## SavedVariables: WARCAMPAIGNSCOMPLETE_SAVEDVARIABLES
+
+Libs\LibStub.lua
+Libs\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0.lua
+Templates.xml
+Localization.lua
+Base.lua
+WarCampaignsComplete.lua
+UIConfig.lua
+UICreate.lua
