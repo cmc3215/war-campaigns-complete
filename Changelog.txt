@@ -1,3 +1,8 @@
+**1.05**
+
+- Release date: 09/03/2018
+- Bug fixed: In some cases, a Lua error would occur on logout when trying to detect whether the player had rested XP. The error did not affect the data or operation of the addon in any other way.
+
 **1.04**
 
 - Release date: 08/23/2018

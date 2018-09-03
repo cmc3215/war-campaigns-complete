@@ -4,7 +4,7 @@
 local NS = select( 2, ... );
 local L = NS.localization;
 NS.releasePatch = "8.0.1";
-NS.versionString = "1.04";
+NS.versionString = "1.05";
 NS.version = tonumber( NS.versionString );
 --
 NS.initialized = false;
@@ -1587,7 +1587,7 @@ NS.Frame( "WCCEventsFrame", UIParent, {
 			--------------------------------------------------------------------------------------------------------------------------------
 			-- PLAYER_LOGOUT
 			--------------------------------------------------------------------------------------------------------------------------------
-			NS.db["characters"][NS.currentCharacter.key]["isRested"] = UnitLevel( "player" ) ~= 120 and ( IsResting() or GetXPExhaustion() > 0 ) or false;
+			NS.db["characters"][NS.currentCharacter.key]["isRested"] = UnitLevel( "player" ) ~= 120 and ( IsResting() or GetXPExhaustion() ) or false;
 		elseif event == "MODIFIER_STATE_CHANGED" then
 			--------------------------------------------------------------------------------------------------------------------------------
 			-- MODIFIER_STATE_CHANGED
