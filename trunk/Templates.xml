@@ -53,7 +53,7 @@
 	<!-- Template -->
 	<Button name="WCCMonitorTabScrollFrameButtonTemplate" hidden="false" virtual="true">
 		<Size>
-			<AbsDimension x="530" y="50"/><!-- Width is all elements combined w/offsets WAS 790-->
+			<AbsDimension x="578" y="50"/><!-- Width is all elements combined w/offsets WAS 790-->
 		</Size>
 		<Layers>
 			<Layer level="BACKGROUND">
@@ -113,21 +113,7 @@
 						<Anchors>
 							<Anchor point="LEFT" relativeTo="$parentWarResources" relativePoint="RIGHT">
 								<Offset>
-									<AbsDimension x="8" y="0"/>
-								</Offset>
-							</Anchor>
-						</Anchors>
-						<ButtonText name="$parentText" justifyH="RIGHT" wordwrap="false" setAllPoints="true"/>
-						<NormalFont style="GameFontHighlight"/>
-					</Button>
-					<Button name="$parentHoALevel">
-						<Size>
-							<AbsDimension x="40" y="16"/>
-						</Size>
-						<Anchors>
-							<Anchor point="LEFT" relativeTo="$parentSealOfWartornFate" relativePoint="RIGHT">
-								<Offset>
-									<AbsDimension x="8" y="0"/>
+									<AbsDimension x="56" y="0"/>
 								</Offset>
 							</Anchor>
 						</Anchors>
@@ -147,7 +133,7 @@
 							<AbsDimension x="8" y="0"/>
 						</Offset>
 					</Anchor>
-					<Anchor point="BOTTOM" relativeTo="$parentCurrencyHoALevel" relativePoint="BOTTOM">
+					<Anchor point="BOTTOM" relativeTo="$parentCurrencyWarResources" relativePoint="BOTTOM">
 						<Offset>
 							<AbsDimension x="0" y="0"/>
 						</Offset>
@@ -177,13 +163,42 @@
 					</Layer>
 				</Layers>
 			</Frame>
+			<!-- [HoA] -->
+			<Frame name="$parentHoA">
+				<Size>
+					<AbsDimension x="40" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parentXPPct" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="8" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Frames>
+					<Button name="$parentLevel">
+						<Size>
+							<AbsDimension x="40" y="16"/>
+						</Size>
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT">
+								<Offset>
+									<AbsDimension x="0" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<ButtonText name="$parentText" justifyH="LEFT" wordwrap="false" setAllPoints="true"/>
+						<NormalFont style="GameFontHighlight"/>
+					</Button>
+				</Frames>
+			</Frame>
 			<!-- [APPct] -->
 			<Frame name="$parentAPPct">
 				<Size>
 					<AbsDimension x="40" y="16"/>
 				</Size>
 				<Anchors>
-					<Anchor point="LEFT" relativeTo="$parentXPPct" relativePoint="RIGHT">
+					<Anchor point="LEFT" relativeTo="$parentHoA" relativePoint="RIGHT">
 						<Offset>
 							<AbsDimension x="8" y="0"/>
 						</Offset>
@@ -344,7 +359,7 @@
 	<!-- Template -->
 	<Button name="WCCCharactersTabScrollFrameButtonTemplate" hidden="false" virtual="true">
 		<Size>
-			<AbsDimension x="530" y="40"/><!-- Width is LESS THAN all elements combined w/offsets -->
+			<AbsDimension x="578" y="40"/><!-- Width is LESS THAN all elements combined w/offsets -->
 		</Size>
 		<!-- Frames -->
 		<Frames>
@@ -364,7 +379,7 @@
 			<!-- [Name] -->
 			<Frame name="$parent_Name">
 				<Size>
-					<AbsDimension x="444" y="40"/><!-- 444 = ( 448 - 4 ) remove 4 here to give checkbox some room -->
+					<AbsDimension x="492" y="40"/><!-- 492 = ( 496 - 4 ) remove 4 here to give checkbox some room -->
 				</Size>
 				<Anchors>
 					<Anchor point="LEFT" relativeTo="$parent_IconTexture" relativePoint="RIGHT">

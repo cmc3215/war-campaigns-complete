@@ -1,3 +1,15 @@
+**1.06**
+
+- Release date: 10/22/2020
+- Moved Heart of Azeroth icon to its own column beside AP percentage.
+- Adjusted tier labels on tooltip of selected tiers.
+- Updated libs CallbackHandler and LibDBIcon
+- Minor compatibility fixes for patch 9.0.1.
+- TOC updated for patch 9.0.1.
+- Fixed: Champion XP now reflects the availability of Legendary quality added in patch 8.1.
+- Fixed: XP percent colors (blue/purple) should be accurate again now. Recently, the API calls related to rested XP have begun returning inaccurate information at logout, so I am recording the info differently now.
+- Character data wiped due to significant game changes in patch 9.0.1. Please log back into your characters to repopulate their data.
+
 **1.05**
 
 - Release date: 09/03/2018
