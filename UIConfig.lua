@@ -9,7 +9,7 @@ local L = NS.localization;
 NS.UI.cfg = {
 	--
 	mainFrame = {
-		width		= 576,
+		width		= 624,
 		height		= 536,
 		portrait	= true,
 		frameStrata	= "MEDIUM",
@@ -58,6 +58,11 @@ NS.UI.cfg = {
 					size = { ( 40 + 2 + 8 ), 19 },
 					setPoint = { "TOPLEFT", "#sibling", "TOPRIGHT", -2, 0 },
 				} );
+				NS.Button( "HoAColumnHeaderButton", SubFrame, "" .. L["HoA"], {
+					template = "WCCColumnHeaderButtonTemplate",
+					size = { ( 40 + 2 + 8 ), 19 },
+					setPoint = { "TOPLEFT", "#sibling", "TOPRIGHT", -2, 0 },
+				} );
 				NS.Button( "APColumnHeaderButton", SubFrame, "" .. L["AP"], {
 					template = "WCCColumnHeaderButtonTemplate",
 					size = { ( 40 + 2 + 8 ), 19 },
@@ -95,7 +100,7 @@ NS.UI.cfg = {
 					justifyH = "CENTER",
 				} );
 				NS.ScrollFrame( "ScrollFrame", SubFrame, {
-					size = { 530, ( 50 * NS.db["monitorRows"] - 5 ) },
+					size = { 578, ( 50 * NS.db["monitorRows"] - 5 ) },
 					setPoint = { "TOPLEFT", "$parentNameColumnHeaderButton", "BOTTOMLEFT", 1, -3 },
 					buttonTemplate = "WCCMonitorTabScrollFrameButtonTemplate",
 					update = {
@@ -185,19 +190,20 @@ NS.UI.cfg = {
 										_G[bn .. "CurrencySealOfWartornFate"]:Hide();
 									end
 									--------------------------------------------------------------------------------------------------------------------------------------------
-									_G[bn .. "CurrencyHoALevelText"]:SetText( NORMAL_FONT_COLOR_CODE .. ( items[k]["hoaLevel"] or "??" ) .. FONT_COLOR_CODE_CLOSE .. "|T" .. 1869493 .. ":16:16:3:0:64:64:10:60:10:60|t" );
-									_G[bn .. "CurrencyHoALevel"]:SetScript( "OnClick", OnClick );
+									-- Lvl, XP, HoA, AP
+									--------------------------------------------------------------------------------------------------------------------------------------------
+									_G[bn .. "LvlText"]:SetText( items[k]["level"] );
+									_G[bn .. "XPPctText"]:SetText( ( items[k]["level"] < 120 and ( items[k]["isRested"] and "|cff4D85E6" or "|cff80528C" ) or GRAY_FONT_COLOR_CODE ) .. items[k]["xpPercent"] .. "%|r" );
+									--------------------------------------------------------------------------------------------------------------------------------------------
 									local hoa = {
 										text = ORDER_HALL_SHAMAN or L["Heart of Azeroth"],
 										lines = HIGHLIGHT_FONT_COLOR_CODE .. string.format( AZERITE_POWER_TOOLTIP_TITLE, ( items[k]["hoaLevel"] or "??" ), ( items[k]["apMax"] and items[k]["apMax"] > 0 and ( items[k]["apMax"] - items[k]["ap"] ) or "??" ) ) .. FONT_COLOR_CODE_CLOSE,
 									};
-									_G[bn .. "CurrencyHoALevel"]:SetScript( "OnEnter", function( self ) MonitorButton_OnEnter( self, hoa.text, hoa.lines ); end );
-									_G[bn .. "CurrencyHoALevel"]:SetScript( "OnLeave", OnLeave );
+									_G[bn .. "HoALevel"]:SetScript( "OnClick", OnClick );
+									_G[bn .. "HoALevel"]:SetScript( "OnEnter", function( self ) MonitorButton_OnEnter( self, hoa.text, hoa.lines ); end );
+									_G[bn .. "HoALevel"]:SetScript( "OnLeave", OnLeave );
+									_G[bn .. "HoALevelText"]:SetText( "|T" .. 1869493 .. ":16:16:-3:0:64:64:10:60:10:60|t" .. NORMAL_FONT_COLOR_CODE .. ( items[k]["hoaLevel"] or "??" ) .. FONT_COLOR_CODE_CLOSE );
 									--------------------------------------------------------------------------------------------------------------------------------------------
-									-- Lvl, XP, AP
-									--------------------------------------------------------------------------------------------------------------------------------------------
-									_G[bn .. "LvlText"]:SetText( items[k]["level"] );
-									_G[bn .. "XPPctText"]:SetText( ( items[k]["level"] < 120 and ( items[k]["isRested"] and "|cff4D85E6" or "|cff80528C" ) or GRAY_FONT_COLOR_CODE ) .. items[k]["xpPercent"] .. "%|r" );
 									_G[bn .. "APPctText"]:SetText( ITEM_QUALITY_COLORS[6].hex .. ( items[k]["apPercent"] and items[k]["apPercent"] .. "%" or "??" ) .. "|r" );
 									--------------------------------------------------------------------------------------------------------------------------------------------
 									-- Init Monitor Buttons
@@ -312,23 +318,23 @@ NS.UI.cfg = {
 					justifyV = "MIDDLE",
 				} );
 				local FooterFrame = NS.Frame( "Footer", SubFrame, {
-					size = { 558, ( 32 + 8 + 8 ) },
+					size = { 606, ( 32 + 8 + 8 ) },
 					setPoint = { "BOTTOM", "$parent", "BOTTOM", 0, 0 },
 					bg = { "Interface\\Garrison\\GarrisonMissionUIInfoBoxBackgroundTile", true, true },
 					bgSetAllPoints = true,
 				} );
-				-- ( 558 - 32 ) = 526, 526 / 3 = ~175, , 175 * 3 = 525
-				-- 526 - 525 = 1 leftover pixel(s) (spread over padding for 3 frames as 9's instead of 8's)
+				-- ( 606 - 32 ) = 574, 574 / 3 = ~191, , 191 * 3 = 573
+				-- 574 - 573 = 1 leftover pixel(s) (spread over padding for 3 frames as 9's instead of 8's)
 				local MissionsReportFrame = NS.Frame( "MissionsReport", FooterFrame, {
-					size = { 175, 32 },
+					size = { 191, 32 },
 					setPoint = { "TOPLEFT", "$parent", "TOPLEFT", 8, -8 },
 				} );
 				local AdvancementsReportFrame = NS.Frame( "AdvancementsReport", FooterFrame, {
-					size = { 175, 32 },
+					size = { 191, 32 },
 					setPoint = { "LEFT", "#sibling", "RIGHT", 9, 0 },
 				} );
 				local WorkOrdersReportFrame = NS.Frame( "WorkOrdersReport", FooterFrame, {
-					size = { 175, 32 },
+					size = { 191, 32 },
 					setPoint = { "LEFT", "#sibling", "RIGHT", 8, 0 },
 				} );
 				--
@@ -381,19 +387,19 @@ NS.UI.cfg = {
 				WorkOrdersReportIndicator:SetPoint( "BOTTOMRIGHT", 4.5, -4.5 );
 				--
 				NS.TextFrame( "Right", MissionsReportFrame, "", {
-					size = { ( 175 - 32 - 4 ), 32 },
+					size = { ( 191 - 32 - 4 ), 32 },
 					setPoint = { "LEFT", "$parent", "LEFT", ( 32 + 4 ), 0 },
 					justifyH = "LEFT",
 					fontObject = "GameFontNormalSmall",
 				} );
 				NS.TextFrame( "Right", AdvancementsReportFrame, "", {
-					size = { ( 175 - 32 - 4 ), 32 },
+					size = { ( 191 - 32 - 4 ), 32 },
 					setPoint = { "LEFT", "$parent", "LEFT", ( 32 + 4 ), 0 },
 					justifyH = "LEFT",
 					fontObject = "GameFontNormalSmall",
 				} );
 				NS.TextFrame( "Right", WorkOrdersReportFrame, "", {
-					size = { ( 175 - 32 - 4 ), 32 },
+					size = { ( 191 - 32 - 4 ), 32 },
 					setPoint = { "LEFT", "$parent", "LEFT", ( 32 + 4 ), 0 },
 					justifyH = "LEFT",
 					fontObject = "GameFontNormalSmall",
@@ -526,7 +532,7 @@ NS.UI.cfg = {
 					width = 190,
 				} );
 				NS.ScrollFrame( "ScrollFrame", SubFrame, {
-					size = { 530, ( 40 * 8 - 5 ) },
+					size = { 578, ( 40 * 8 - 5 ) },
 					setPoint = { "TOPLEFT", "$parent", "TOPLEFT", -1, -37 },
 					buttonTemplate = "WCCCharactersTabScrollFrameButtonTemplate",
 					update = {

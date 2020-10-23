@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------------------------------------------------------------------
 local NS = select( 2, ... );
 local L = NS.localization;
-NS.releasePatch = "8.0.1";
-NS.versionString = "1.05";
+NS.releasePatch = "9.0.1";
+NS.versionString = "1.06";
 NS.version = tonumber( NS.versionString );
 --
 NS.initialized = false;
@@ -46,7 +46,8 @@ NS.sealOfWartornFateQuests = { 52837, 52840, 52834, 52838, 52835, 52839 };
 NS.sealOfWartornFateMax = 5;
 NS.sealOfWartornFateWeeklyMax = 2;
 NS.maxAdvancementTiers = 6;
-NS.maxChampions = 5;
+NS.maxChampions = 6;
+NS.maxLevelForPlayerExpansion = GetMaxLevelForPlayerExpansion();
 --
 NS.fullHeart = NS.GetAtlasInlineTexture( 'GarrisonTroops-Health' );
 NS.emptyHeart = NS.GetAtlasInlineTexture( 'GarrisonTroops-Health-Consume' );
@@ -149,6 +150,12 @@ NS.Upgrade = function()
 			c["advancement"]["talentBeingResearched"] = nil;
 			c["advancement"]["numTalents"] = nil;
 		end
+	end
+	-- 1.06
+	if version < 1.06 then
+		-- Wipe characters
+		NS.db["characters"] = {};
+		NS.Print( L["Character data wiped due to significant game changes in patch 9.0.1. Please log back into your characters to repopulate their data."] );
 	end
 	--
 	NS.db["version"] = NS.version;
@@ -333,8 +340,8 @@ NS.UpdateCharacter = function()
 			["ap"] = 0,										-- ^
 			["apMax"] = 0,									-- ^
 			["apPercent"] = 0,								-- ^
-			["factionIcon"] = nil,							-- Reset below every update (Pandas may change)
-			["warResources"] = 0,							-- Reset below every update
+			["factionIcon"] = nil,							-- ^ (Pandas may change)
+			["warResources"] = 0,							-- ^
 			["advancement"] = {},							-- ^
 			["orders"] = {},								-- ^
 			["troops"] = {},								-- ^
@@ -350,8 +357,8 @@ NS.UpdateCharacter = function()
 	char["level"] = UnitLevel( "player" );
 	char["xp"] = UnitXP( "player" );
 	char["xpMax"] = UnitXPMax( "player" );
-	char["xpPercent"] = char["level"] ~= 120 and math.floor( ( char["xp"] / char["xpMax"] * 100 ) ) or 0;
-	char["isRested"] = char["level"] ~= 120 and ( IsResting() or GetXPExhaustion() ) or false;
+	char["xpPercent"] = char["level"] ~= NS.maxLevelForPlayerExpansion and math.floor( ( char["xp"] / char["xpMax"] * 100 ) ) or 0;
+	char["isRested"] = char["level"] ~= NS.maxLevelForPlayerExpansion and ( IsResting() or GetXPExhaustion() ) or false;
 	--
 	local azeriteItemLocation = C_AzeriteItem.FindActiveAzeriteItem();
 	if azeriteItemLocation then
@@ -367,19 +374,19 @@ NS.UpdateCharacter = function()
 	--
 	char["factionIcon"] = NS.currentCharacter.factionIcon;
 	--
-	char["warResources"] = select( 2, GetCurrencyInfo( 1560 ) );
-	char["sealOfWartornFate"] = select( 2, GetCurrencyInfo( 1580 ) );
+	char["warResources"] = C_CurrencyInfo.GetCurrencyInfo( 1560 )["quantity"];
+	char["sealOfWartornFate"] = C_CurrencyInfo.GetCurrencyInfo( 1580 )["quantity"];
 	--------------------------------------------------------------------------------------------------------------------------------------------
 	-- War Campaign Mission Table ?
 	--------------------------------------------------------------------------------------------------------------------------------------------
-	local hasWarCampaignMissionTable = C_Garrison.HasGarrison( LE_GARRISON_TYPE_8_0 );
+	local hasWarCampaignMissionTable = C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 );
 	if hasWarCampaignMissionTable then
 		--------------------------------------------------------------------------------------------------------------------------------------------
 		-- Shipment Confirm: Avoids incomplete and inaccurate data being recorded following login, reloads, and pickups
 		--------------------------------------------------------------------------------------------------------------------------------------------
 		local shipmentsNum,shipmentsNumReady = 0,0;
 		--
-		local followerShipments = C_Garrison.GetFollowerShipments( LE_GARRISON_TYPE_8_0 );
+		local followerShipments = C_Garrison.GetFollowerShipments( Enum.GarrisonType.Type_8_0 );
 		shipmentsNum = shipmentsNum + #followerShipments;
 		for i = 1, #followerShipments do
 			local name,texture,shipmentCapacity,shipmentsReady,shipmentsTotal,creationTime,duration,timeleftString = C_Garrison.GetLandingPageShipmentInfoByContainerID( followerShipments[i] );
@@ -415,11 +422,11 @@ NS.UpdateCharacter = function()
 			--
 			local talentTiers = {}; -- Selected talents by tier
 			--
-			local talentTreeIDs = C_Garrison.GetTalentTreeIDsByClassID( LE_GARRISON_TYPE_8_0, NS.currentCharacter.classID );
-			local completeTalentID = C_Garrison.GetCompleteTalent( LE_GARRISON_TYPE_8_0 );
-			local talentTreeIDIndex = NS.currentCharacter.factionIcon == 2173920 --[[ Horde ]] and 1 or 2;
-			if talentTreeIDs and talentTreeIDs[talentTreeIDIndex] then -- Talent trees and first treeID available
-				local talentTree = select( 3, C_Garrison.GetTalentTreeInfoForID( talentTreeIDs[talentTreeIDIndex] ) );
+			local talentTreeIDs = C_Garrison.GetTalentTreeIDsByClassID( Enum.GarrisonType.Type_8_0, NS.currentCharacter.classID );
+			local completeTalentID = C_Garrison.GetCompleteTalent( Enum.GarrisonType.Type_8_0 );
+			local talentTreeIDIndex = NS.currentCharacter.factionIcon == 2173920 --[[ Horde ]] and 1 or 2; -- 1=152 and 2=153
+			if talentTreeIDs and talentTreeIDs[talentTreeIDIndex] then -- Talent trees and treeID available
+				local talentTree = C_Garrison.GetTalentTreeInfo( talentTreeIDs[talentTreeIDIndex] )["talents"];
 				for _,talent in ipairs( talentTree ) do
 					talent.tier = talent.tier + 1; -- Fix tiers starting at 0
 					talent.uiOrder = talent.uiOrder + 1; -- Fix order starting at 0
@@ -441,7 +448,7 @@ NS.UpdateCharacter = function()
 					end
 				end
 				-- Advancements Locked? -- Not if player has talents or is on quest "Adapting Our Tactics"
-				if #talentTiers > 0	or ( NS.currentCharacter.factionIcon == 2173920 --[[ Horde ]] and GetQuestLogIndexByID( 53602 ) > 0 ) or ( NS.currentCharacter.factionIcon == 2173919 --[[ Alliance]] and GetQuestLogIndexByID( 53583 ) > 0 ) then
+				if #talentTiers > 0	or ( NS.currentCharacter.factionIcon == 2173920 --[[ Horde ]] and C_QuestLog.GetLogIndexForQuestID( 53602 ) ~= nil ) or ( NS.currentCharacter.factionIcon == 2173919 --[[ Alliance]] and C_QuestLog.GetLogIndexForQuestID( 53583 ) ~= nil ) then
 					char["advancement"]["locked"] = false;
 				else
 					char["advancement"]["locked"] = true;
@@ -454,7 +461,7 @@ NS.UpdateCharacter = function()
 			--------------------------------------------------------------------------------------------------------------------------------------------
 			wipe( char["orders"] ); -- Start fresh every update
 			-- Follower Shipments
-			local followerShipments = C_Garrison.GetFollowerShipments( LE_GARRISON_TYPE_8_0 );
+			local followerShipments = C_Garrison.GetFollowerShipments( Enum.GarrisonType.Type_8_0 );
 			for i = 1, #followerShipments do
 				local name,texture,capacity,ready,total,creationTime,duration = C_Garrison.GetLandingPageShipmentInfoByContainerID( followerShipments[i] );
 				table.insert( char["orders"], {
@@ -474,8 +481,8 @@ NS.UpdateCharacter = function()
 				local troops = {};
 				local champions = {};
 				local troopCapacity = 4 + ( talentTiers[2] and not talentTiers[2].isBeingResearched and talentTiers[2].id == 553 --[[ Upgraded Troop Barracks ]] and 2 or 0 ); -- 549
-				local followers = C_Garrison.GetFollowers( LE_FOLLOWER_TYPE_GARRISON_8_0 );
-				char["troopsUnlocked"] = IsQuestFlaggedCompleted( 51771 ) --[[ Horde ]] or IsQuestFlaggedCompleted( 51715 ) --[[ Alliance ]] or false;
+				local followers = C_Garrison.GetFollowers( Enum.GarrisonFollowerType.FollowerType_8_0 );
+				char["troopsUnlocked"] = C_QuestLog.IsQuestFlaggedCompleted( 51771 ) --[[ Horde ]] or C_QuestLog.IsQuestFlaggedCompleted( 51715 ) --[[ Alliance ]] or false;
 				if followers and #followers > 0 then
 					for i = 1, #followers do
 						if C_Garrison.GetFollowerIsTroop( followers[i].followerID ) then
@@ -538,7 +545,7 @@ NS.UpdateCharacter = function()
 			-- Missions
 			--------------------------------------------------------------------------------------------------------------------------------------------
 			wipe( char["missions"] );
-			char["missions"] = C_Garrison.GetLandingPageItems( LE_GARRISON_TYPE_8_0 ); -- In Progress or Complete
+			char["missions"] = C_Garrison.GetLandingPageItems( Enum.GarrisonType.Type_8_0 ); -- In Progress or Complete
 			for i = 1, #char["missions"] do
 				local mission = char["missions"][i];
 				-- Success Chance
@@ -589,11 +596,11 @@ NS.UpdateCharacter = function()
 			-- Seals
 			--------------------------------------------------------------------------------------------------------------------------------------------
 			wipe( char["seals"] );
-			if char["level"] >= 120 then
+			if char["level"] >= 50 then
 				-- Seal of Wartorn Fate Quests
 				local sealOfWartornFateQuestsCompleted = 0;
 				for i = 1, #NS.sealOfWartornFateQuests do
-					if IsQuestFlaggedCompleted( NS.sealOfWartornFateQuests[i] ) then
+					if C_QuestLog.IsQuestFlaggedCompleted( NS.sealOfWartornFateQuests[i] ) then
 						sealOfWartornFateQuestsCompleted = sealOfWartornFateQuestsCompleted + 1;
 						if sealOfWartornFateQuestsCompleted == NS.sealOfWartornFateWeeklyMax then
 							break; -- Stop early when possible
@@ -677,7 +684,7 @@ NS.UpdateCharacters = function()
 		-- Seals
 		--
 		seals[char["name"]] = {};
-		if char["seals"]["sealOfWartornFateQuestsCompleted"] --[[ number - initialized when char reaches level 120 ]] then
+		if char["seals"]["sealOfWartornFateQuestsCompleted"] --[[ number - initialized when char reaches level 50 ]] then
 			local s = seals[char["name"]];
 			s.sealOfWartornFate = {
 				text = string.format( L["Seal of Wartorn Fate - %d/%d"], char["sealOfWartornFate"], NS.sealOfWartornFateMax ),
@@ -781,7 +788,6 @@ NS.UpdateCharacters = function()
 					wea.shiftLines[#wea.shiftLines + 1] = " ";
 					wea.shiftLines[#wea.shiftLines + 1] = "|T" .. talent.icon .. ":20|t " .. HIGHLIGHT_FONT_COLOR_CODE .. talent.name .. FONT_COLOR_CODE_CLOSE;
 					wea.shiftLines[#wea.shiftLines + 1] = { talent.description, nil, nil, nil, true };
-					wea.shiftLines[#wea.shiftLines + 1] = " ";
 					wea.shiftLines[#wea.shiftLines + 1] = BATTLENET_FONT_COLOR_CODE .. string.format( L["Tier %d"], talent.tier ) .. FONT_COLOR_CODE_CLOSE;
 				end
 			end
@@ -793,7 +799,7 @@ NS.UpdateCharacters = function()
 				local talent = char["advancement"]["selectedTalents"][char["advancement"]["tierBeingResearched"]];
 				wea.texture = talent.icon;
 				wea.text = "|T" .. talent.icon .. ":20|t " .. HIGHLIGHT_FONT_COLOR_CODE .. talent.name .. FONT_COLOR_CODE_CLOSE;
-				wea.seconds = talent.researchTimeRemaining > passedTime and ( talent.researchTimeRemaining - passedTime ) or 0;
+				wea.seconds = talent.timeRemaining > passedTime and ( talent.timeRemaining - passedTime ) or 0;
 				wea.lines = {};
 				wea.lines[#wea.lines + 1] = { talent.description, nil, nil, nil, true };
 				wea.lines[#wea.lines + 1] = " ";
@@ -822,12 +828,12 @@ NS.UpdateCharacters = function()
 					wea.lines[#wea.lines + 1] = { talent.description, nil, nil, nil, true };
 					wea.lines[#wea.lines + 1] = " ";
 					wea.lines[#wea.lines + 1] = string.format( L["Research Time: %s"], HIGHLIGHT_FONT_COLOR_CODE .. SecondsToTime( talent.researchDuration ) ) .. FONT_COLOR_CODE_CLOSE;
-					wea.lines[#wea.lines + 1] = string.format( L["Cost: %s"], HIGHLIGHT_FONT_COLOR_CODE .. BreakUpLargeNumbers( talent.researchCost ) .. FONT_COLOR_CODE_CLOSE .. "|T".. 2032600 ..":0:0:2:0|t" );
+					wea.lines[#wea.lines + 1] = string.format( L["Cost: %s"], HIGHLIGHT_FONT_COLOR_CODE .. BreakUpLargeNumbers( talent.researchCurrencyCosts[1].currencyQuantity ) .. FONT_COLOR_CODE_CLOSE .. "|T".. 2032600 ..":0:0:2:0|t" );
 					-- Conditions
 					if talent.tier == 1 then
 						-- Level
-						if char["level"] < 114 then
-							wea.condition = RED_FONT_COLOR_CODE .. string.format( ITEM_MIN_LEVEL, 114 ) .. FONT_COLOR_CODE_CLOSE;
+						if char["level"] < 47 then
+							wea.condition = RED_FONT_COLOR_CODE .. string.format( ITEM_MIN_LEVEL, 47 ) .. FONT_COLOR_CODE_CLOSE;
 							wea.lines[#wea.lines + 1] = wea.condition;
 						-- Locked
 						elseif char["advancement"]["locked"] then
@@ -877,7 +883,7 @@ NS.UpdateCharacters = function()
 					c["lastKnownTimeLeftSeconds"] = timeLeftSeconds; -- Update champion missions for LDB tooltip use
 					--
 					ch.lines[#ch.lines + 1] = "|T" .. c.portraitIconID .. ":32:32|t  " .. ITEM_QUALITY_COLORS[c.quality].hex .. c.name .. FONT_COLOR_CODE_CLOSE .. timeLeft;
-					if c.levelXP and c.levelXP > 0 and c.xp and c.quality < 4 then -- [[ Epic quality is max upgrade ]]
+					if c.levelXP and c.levelXP > 0 and c.xp and c.quality < 5 then -- [[ Legendary quality is max upgrade ]]
 						ch.lines[#ch.lines + 1] = "|T" .. 136449 --[[ see ArtTextureID.lua ]] .. ":1:32|t  " .. string.format( L["%s%d XP to|r %s"], HIGHLIGHT_FONT_COLOR_CODE, ( c.levelXP - c.xp ), ( ITEM_QUALITY_COLORS[c.quality + 1].hex .. _G["ITEM_QUALITY" .. ( c.quality + 1 ) .. "_DESC"] .. FONT_COLOR_CODE_CLOSE ) );
 						ch.lines[#ch.lines + 1] = " "; -- spacer
 					end
@@ -1068,7 +1074,7 @@ NS.UpdateLDB = function()
 			at = advancement.seconds and 1 or 0;
 			natr = advancement.seconds and advancement.seconds;
 			ari = ( advancement.status == "researching" and char["advancement"]["tierBeingResearched"] and char["advancement"]["selectedTalents"][char["advancement"]["tierBeingResearched"]] ) or
-			( advancement.status == "available" and { icon = char["advancement"]["newTalentTier"][1].icon, name = string.format( L["%sNew!|r Tier %d: %s"], GREEN_FONT_COLOR_CODE, char["advancement"]["newTalentTier"][1].tier, ( HIGHLIGHT_FONT_COLOR_CODE .. SecondsToTime( char["advancement"]["newTalentTier"][1].researchDuration ) .. " - " .. BreakUpLargeNumbers( char["advancement"]["newTalentTier"][1].researchCost ) .. FONT_COLOR_CODE_CLOSE .. "|T" .. 2032600 ..":0:0:2:0|t" ) ) } ) or
+			( advancement.status == "available" and { icon = char["advancement"]["newTalentTier"][1].icon, name = string.format( L["%sNew!|r Tier %d: %s"], GREEN_FONT_COLOR_CODE, char["advancement"]["newTalentTier"][1].tier, ( HIGHLIGHT_FONT_COLOR_CODE .. SecondsToTime( char["advancement"]["newTalentTier"][1].researchDuration ) .. " - " .. BreakUpLargeNumbers( char["advancement"]["newTalentTier"][1].researchCurrencyCosts[1].currencyQuantity ) .. FONT_COLOR_CODE_CLOSE .. "|T" .. 2032600 ..":0:0:2:0|t" ) ) } ) or
 			( advancement.status == "maxed" and { icon = advancement.texture, name = ( GRAY_FONT_COLOR_CODE .. L["No new tiers available"] .. FONT_COLOR_CODE_CLOSE ) } );
 		end
 		if at == 0 then
@@ -1295,7 +1301,7 @@ NS.UpdateLDB = function()
 	NS.ldbTooltip.missions = missionsTooltip;
 	NS.ldbTooltip.advancements = advancementsTooltip;
 	NS.ldbTooltip.orders = ordersTooltip;
-	NS.ldbTooltip.available = C_Garrison.HasGarrison( LE_GARRISON_TYPE_8_0 );
+	NS.ldbTooltip.available = C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 );
 end
 --
 NS.UpdateAll = function( forceUpdate )
@@ -1360,7 +1366,7 @@ NS.MinimapButton( "WCCMinimapButton", NS.currentCharacter.factionIcon == 2173920
 		NS.SlashCmdHandler();
 	end,
 	OnRightClick = function( self )
-		if C_Garrison.HasGarrison( LE_GARRISON_TYPE_8_0 ) then
+		if C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 ) then
 			GarrisonLandingPageMinimapButton_OnClick();
 		end
 	end,
@@ -1379,7 +1385,7 @@ NS.ldb = LibStub:GetLibrary( "LibDataBroker-1.1" ):NewDataObject( NS.addon, {
 	OnClick = function( self, button )
 		if button == "RightButton" and self:GetName() == NS.ldbiButtonName then -- Right-Click LibDBIcon Minimap button
 			-- Open the original Missions report just as the custom Minimap button does
-			if C_Garrison.HasGarrison( LE_GARRISON_TYPE_8_0 ) then
+			if C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 ) then
 				GarrisonLandingPageMinimapButton_OnClick();
 			end
 		else
@@ -1473,7 +1479,7 @@ NS.UpdateRequestHandler = function( event )
 	local currentTime = time();
 	-- Ticker
 	if not event then
-		local hasWarCampaignMissionTable = C_Garrison.HasGarrison( LE_GARRISON_TYPE_8_0 );
+		local hasWarCampaignMissionTable = C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 );
 		local playerMapID = C_Map.GetBestMapForUnit( "player" );
 		local inBFACapitalCity = ( playerMapID == 1161 or playerMapID == 1165 ); -- Alliance-Boralus = 1161, Horde-Dazar'alor = 1165
 		local inEventZoneOrPeriod = ( inBFACapitalCity or not NS.shipmentConfirmsFlaggedComplete );
@@ -1519,13 +1525,13 @@ NS.Frame( "WCCEventsFrame", UIParent, {
 			--------------------------------------------------------------------------------------------------------------------------------
 			-- War Resources {UPDATED}
 			--------------------------------------------------------------------------------------------------------------------------------
-			NS.db["characters"][NS.currentCharacter.key]["warResources"] = select( 2, GetCurrencyInfo( 1560 ) );
+			NS.db["characters"][NS.currentCharacter.key]["warResources"] = C_CurrencyInfo.GetCurrencyInfo( 1560 )["quantity"];
 			--------------------------------------------------------------------------------------------------------------------------------
 		elseif event == "BONUS_ROLL_RESULT" then
 			--------------------------------------------------------------------------------------------------------------------------------
 			-- Seal of Wartorn Fate {UPDATED}
 			--------------------------------------------------------------------------------------------------------------------------------
-			NS.db["characters"][NS.currentCharacter.key]["sealOfWartornFate"] = select( 2, GetCurrencyInfo( 1580 ) );
+			NS.db["characters"][NS.currentCharacter.key]["sealOfWartornFate"] = C_CurrencyInfo.GetCurrencyInfo( 1580 )["quantity"];
 			--------------------------------------------------------------------------------------------------------------------------------
 		elseif event == "GARRISON_MISSION_STARTED" or event == "GARRISON_MISSION_BONUS_ROLL_COMPLETE" then
 			--------------------------------------------------------------------------------------------------------------------------------
@@ -1572,7 +1578,7 @@ NS.Frame( "WCCEventsFrame", UIParent, {
 			end
 			-- Original Missions Report Minimap Button
 			GarrisonLandingPageMinimapButton:HookScript( "OnShow", function()
-				if not NS.db["showOriginalMissionsReportMinimapButton"] and C_Garrison.HasGarrison( LE_GARRISON_TYPE_8_0 ) then
+				if not NS.db["showOriginalMissionsReportMinimapButton"] and C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 ) then
 					GarrisonLandingPageMinimapButton:Hide();
 				end
 			end );
@@ -1587,7 +1593,7 @@ NS.Frame( "WCCEventsFrame", UIParent, {
 			--------------------------------------------------------------------------------------------------------------------------------
 			-- PLAYER_LOGOUT
 			--------------------------------------------------------------------------------------------------------------------------------
-			NS.db["characters"][NS.currentCharacter.key]["isRested"] = UnitLevel( "player" ) ~= 120 and ( IsResting() or GetXPExhaustion() ) or false;
+			--NS.db["characters"][NS.currentCharacter.key]["isRested"] = UnitLevel( "player" ) ~= NS.maxLevelForPlayerExpansion and ( IsResting() or GetXPExhaustion() ) or false;
 		elseif event == "MODIFIER_STATE_CHANGED" then
 			--------------------------------------------------------------------------------------------------------------------------------
 			-- MODIFIER_STATE_CHANGED
@@ -1599,7 +1605,7 @@ NS.Frame( "WCCEventsFrame", UIParent, {
 			--------------------------------------------------------------------------------------------------------------------------------
 			-- ??? {REQUEST} -- This catches all other events which should request an update. Including player level up, xp/ap, and troops.
 			--------------------------------------------------------------------------------------------------------------------------------
-			if C_Garrison.HasGarrison( LE_GARRISON_TYPE_8_0 ) then
+			if C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 ) then
 				if NS.initialized then
 					-- RequestLandingPageShipmentInfo() followed by NS.UpdateAll
 					-- Only required and effective OUTSIDE event zone or period
