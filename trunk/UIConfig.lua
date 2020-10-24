@@ -823,7 +823,7 @@ NS.UI.cfg = {
 					setPoint = { "TOPLEFT", "#sibling", "BOTTOMLEFT", 0, -1 },
 					tooltip = L["Show or hide the\noriginal Missions Report\nbutton on the Minimap"],
 					OnClick = function( checked )
-						if not C_Garrison.HasGarrison( LE_GARRISON_TYPE_8_0 ) or not GarrisonLandingPageMinimapButton.title then return end
+						if not C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 ) or not GarrisonLandingPageMinimapButton.title then return end
 						GarrisonLandingPageMinimapButton:Hide();
 						GarrisonLandingPageMinimapButton:Show();
 					end,

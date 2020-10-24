@@ -4,7 +4,7 @@
 local NS = select( 2, ... );
 local L = NS.localization;
 NS.releasePatch = "9.0.1";
-NS.versionString = "1.07";
+NS.versionString = "1.08";
 NS.version = tonumber( NS.versionString );
 --
 NS.initialized = false;
@@ -1369,7 +1369,7 @@ NS.MinimapButton( "WCCMinimapButton", NS.currentCharacter.factionIcon == 2173920
 	end,
 	OnRightClick = function( self )
 		if C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 ) then
-			GarrisonLandingPageMinimapButton_OnClick();
+			GarrisonLandingPage_Toggle();
 		end
 	end,
 	OnMiddleClick = function( self )
@@ -1388,7 +1388,7 @@ NS.ldb = LibStub:GetLibrary( "LibDataBroker-1.1" ):NewDataObject( NS.addon, {
 		if button == "RightButton" and self:GetName() == NS.ldbiButtonName then -- Right-Click LibDBIcon Minimap button
 			-- Open the original Missions report just as the custom Minimap button does
 			if C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 ) then
-				GarrisonLandingPageMinimapButton_OnClick();
+				GarrisonLandingPage_Toggle();
 			end
 		else
 			NS.SlashCmdHandler( ( button == "RightButton" and "ldb" ) );

@@ -1,3 +1,9 @@
+**1.08**
+
+- Release date: 10/23/2020
+- Bug fixed: Since 9.0.1, right clicking the minimap button would open the Blizzard Missions frame but caused a Lua error.
+- Bug fixed: Since 9.0.1, toggling Misc tab option "Show Original Missions Report Minimap Button" would result in Lua error.
+
 **1.07**
 
 - Release date: 10/23/2020
