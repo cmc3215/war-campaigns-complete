@@ -4,7 +4,7 @@
 local NS = select( 2, ... );
 local L = NS.localization;
 NS.releasePatch = "9.0.1";
-NS.versionString = "1.06";
+NS.versionString = "1.07";
 NS.version = tonumber( NS.versionString );
 --
 NS.initialized = false;
@@ -430,9 +430,11 @@ NS.UpdateCharacter = function()
 				for _,talent in ipairs( talentTree ) do
 					talent.tier = talent.tier + 1; -- Fix tiers starting at 0
 					talent.uiOrder = talent.uiOrder + 1; -- Fix order starting at 0
-					if talent.selected then
+					if talent.selected or talent.isBeingResearched then
+						-- selected applies only to completed talents whether they be completed now or previously
+						-- isBeingResearched applies only to talents that are currently being researched and have timeRemaining > 0
 						talentTiers[talent.tier] = talent;
-						if talent.isBeingResearched or talent.id == completeTalentID then
+						if talent.isBeingResearched or (talent.selected and talent.id == completeTalentID) then
 							char["advancement"]["tierBeingResearched"] = talent.tier;
 						end
 					end
@@ -1589,11 +1591,6 @@ NS.Frame( "WCCEventsFrame", UIParent, {
 			NS.ldbi:Register( NS.addon, NS.ldb, NS.db["ldbi"] );
 			NS.ldbiButtonName = "LibDBIcon10_" .. NS.addon;
 			--------------------------------------------------------------------------------------------------------------------------------
-		elseif event == "PLAYER_LOGOUT" then
-			--------------------------------------------------------------------------------------------------------------------------------
-			-- PLAYER_LOGOUT
-			--------------------------------------------------------------------------------------------------------------------------------
-			--NS.db["characters"][NS.currentCharacter.key]["isRested"] = UnitLevel( "player" ) ~= NS.maxLevelForPlayerExpansion and ( IsResting() or GetXPExhaustion() ) or false;
 		elseif event == "MODIFIER_STATE_CHANGED" then
 			--------------------------------------------------------------------------------------------------------------------------------
 			-- MODIFIER_STATE_CHANGED
