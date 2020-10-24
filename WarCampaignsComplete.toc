@@ -1,6 +1,6 @@
 ## Interface: 90001
 ## Title: War Campaigns Complete
-## Version: 1.07
+## Version: 1.08
 ## Author: Clinton Caldwell (CurseForge User: cmc3215)
 ## Notes: Monitors Missions, Advancements, and Followers account-wide.
 ## SavedVariables: WARCAMPAIGNSCOMPLETE_SAVEDVARIABLES
