@@ -1,0 +1,67 @@
+**1.09**
+
+- Release date: 12/05/2020
+- Bug fixed: Since 9.0.2, when players placed the Heart of Azeroth neck item into a bank bag and closed the bank, a Lua error would occur related to C_AzeriteItem.GetAzeriteItemXPInfo(azeriteItemLocation).
+- TOC updated for patch 9.0.2.
+
+**1.08**
+
+- Release date: 10/23/2020
+- Bug fixed: Since 9.0.1, right clicking the minimap button would open the Blizzard Missions frame but caused a Lua error.
+- Bug fixed: Since 9.0.1, toggling Misc tab option "Show Original Missions Report Minimap Button" would result in Lua error.
+
+**1.07**
+
+- Release date: 10/23/2020
+- Bug fixed: Since 9.0.1, advancement talents tracking would sometimes not display correctly.
+
+**1.06**
+
+- Release date: 10/22/2020
+- Moved Heart of Azeroth icon to its own column beside AP percentage.
+- Adjusted tier labels on tooltip of selected tiers.
+- Updated libs CallbackHandler and LibDBIcon
+- Minor compatibility fixes for patch 9.0.1.
+- TOC updated for patch 9.0.1.
+- Fixed: Champion XP now reflects the availability of Legendary quality added in patch 8.1.
+- Fixed: XP percent colors (blue/purple) should be accurate again now. Recently, the API calls related to rested XP have begun returning inaccurate information at logout, so I am recording the info differently now.
+- Character data wiped due to significant game changes in patch 9.0.1. Please log back into your characters to repopulate their data.
+
+**1.05**
+
+- Release date: 09/03/2018
+- Bug fixed: In some cases, a Lua error would occur on logout when trying to detect whether the player had rested XP. The error did not affect the data or operation of the addon in any other way.
+
+**1.04**
+
+- Release date: 08/23/2018
+- Bug fixed: Troops total of 4 was not being updated to 6 after researching the tier 2 talent "Upgraded Troop Barracks" (fix requires logging into affected character).
+- Heart of Azeroth, Resources, and Seals for the current character now all show up on the LDB text when "All Characters" is selected. Missions, Advancements, and Orders continue to combined account-wide of course.
+
+**1.03**
+
+- Release date: 08/22/2018
+- Added the Heart of Azeroth level on the monitor tab, tooltip, and LDB text (requires logging onto character first).
+- New columns for XP and AP (Artifact Power %).
+- Holding Shift while mousing over an Advancement button on the Monitor tab will now list all your selected tiers.
+- New LDB option: Heart of Azeroth - shows level and AP.
+- New LDB option: Use Letter Labels (e.g. M).
+- New LDB option: Numbers Only (e.g. 1 not 1 Ready).
+- Bug fixed: Resources and Seals were not showing on LDB text when "All Characters" was chosen.
+
+**1.02**
+
+- Release date: 08/19/2018
+- Bug fixed: Advancements were not being tracked properly on Horde characters.
+
+**1.01**
+
+- Release date: 08/19/2018
+- Fixed: Missions icon shows up along with the other icons when player is flagged as having an 8.0 Garrison.
+- Reorganized the LDB text format dropdown menu into checkboxes for simplicity and flexibility.
+- Added "Resources" (War Resources) and "Seals" (Seal of Wartorn Fate) as an optional display in the LDB data source.
+
+**1.0**
+
+- Release date: 08/17/2018
+- Initial release.
