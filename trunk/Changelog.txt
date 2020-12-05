@@ -1,3 +1,9 @@
+**1.09**
+
+- Release date: 12/05/2020
+- Bug fixed: Since 9.0.2, when players placed the Heart of Azeroth neck item into a bank bag and closed the bank, a Lua error would occur related to C_AzeriteItem.GetAzeriteItemXPInfo(azeriteItemLocation).
+- TOC updated for patch 9.0.2.
+
 **1.08**
 
 - Release date: 10/23/2020
