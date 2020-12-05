@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------------------------------------------------------------------
 local NS = select( 2, ... );
 local L = NS.localization;
-NS.releasePatch = "9.0.1";
-NS.versionString = "1.08";
+NS.releasePatch = "9.0.2";
+NS.versionString = "1.09";
 NS.version = tonumber( NS.versionString );
 --
 NS.initialized = false;
@@ -361,7 +361,7 @@ NS.UpdateCharacter = function()
 	char["isRested"] = char["level"] ~= NS.maxLevelForPlayerExpansion and ( IsResting() or GetXPExhaustion() ) or false;
 	--
 	local azeriteItemLocation = C_AzeriteItem.FindActiveAzeriteItem();
-	if azeriteItemLocation then
+	if (azeriteItemLocation and pcall(C_AzeriteItem.GetAzeriteItemXPInfo, azeriteItemLocation)) then
 		char["ap"], char["apMax"] = C_AzeriteItem.GetAzeriteItemXPInfo( azeriteItemLocation );
 		char["hoaLevel"] = C_AzeriteItem.GetPowerLevel( azeriteItemLocation );
 		char["apPercent"] = math.floor( ( char["ap"] / char["apMax"] * 100 ) );
