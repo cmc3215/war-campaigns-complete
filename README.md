@@ -6,7 +6,7 @@ Monitors Missions, Advancements, and Followers account-wide.
 
 *Supports Battle for Azeroth War Campaigns (Garrisons 8.0).*
 
-<img src="Screenshot1.png" width="400" height="400">
+<img alt="Screenshot 1" src="Screenshot1.png" width="400" height="400">
 
 ## Features
 * Tracks data across all your characters, main and alts, account-wide.
