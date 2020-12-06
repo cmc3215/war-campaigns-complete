@@ -58,7 +58,6 @@ Please make sure you have the latest version and post into the CurseForge.com co
 * Does not account for changes in client computer time. For example, logging in with the addon enabled in a new timezone or after daylight savings time changes will cause small temporary discrepancies.
 
 ## Addons by cmc3215
-
 * <a href="https://github.com/cmc3215/collectionshop">CollectionShop</a>
 * <a href="https://github.com/cmc3215/professions-complete">Professions Complete</a>
 * <a href="https://github.com/cmc3215/battle-net-friend-alert">Battle.net Friend Alert</a>
