@@ -1,6 +1,6 @@
 # War Campaigns Complete
 
-<a href="https://www.paypal.com/cgi-bin/webscr?hosted_button_id=37B3BPALKHXAS&amp;item_name=War+Campaigns+Complete+(from+GitHub)&amp;cmd=_s-xclick"><strong style="text-decoration: underline;">Donate</strong> using <strong><span style="color: #021e73;">Pay</span><span style="color: #1189d6;">Pal</span></strong> if you <span style="color: red;">❤</span> this addon!</a>
+<a href="https://www.paypal.com/cgi-bin/webscr?hosted_button_id=37B3BPALKHXAS&amp;item_name=War+Campaigns+Complete+(from+GitHub)&amp;cmd=_s-xclick">**Donate** using **PayPal** if you ❤ this addon!</a>
 
 Monitors Missions, Advancements, and Followers account-wide.
 
@@ -11,17 +11,17 @@ Monitors Missions, Advancements, and Followers account-wide.
 ## Features
 * Tracks data across all your characters, main and alts, account-wide.
 * Choose what to monitor for each character.
-* Tracks <strong>Missions</strong> in progress.
-* Tracks&nbsp;<strong>Heart of Azeroth Level </strong>(tooltip shows Artifact Power to next level).
-* Tracks<strong> Artifact Power (AP)</strong>&nbsp;percent to next level.
-* Tracks&nbsp;<strong>Level and XP</strong> percent to next level.
-* Tracks&nbsp;<strong>War Resources</strong>.
-* Shows <strong>new tier Advancement</strong>&nbsp;choices available.
-* Shows all previously&nbsp;<strong>selected Advancement tiers</strong>.
-* Tracks&nbsp;<strong>Seal of Wartorn Fate</strong> (tooltip shows completion of "Seal of Wartorn Fate" quests).
-* Tracks&nbsp;<strong>Troops</strong>&nbsp;(orders and durability) and <strong>Champions</strong> (XP to next quality).
-* Limited <strong>LibDataBroker</strong> support and options.
-* Slash command <strong>/wcc</strong> or <strong>/warcampaignscomplete</strong> will also open and close.
+* Tracks **Missions** in progress.
+* Tracks **Heart of Azeroth Level** (tooltip shows Artifact Power to next level).
+* Tracks **Artifact Power (AP)** percent to next level.
+* Tracks **Level and XP** percent to next level.
+* Tracks **War Resources**.
+* Shows **new tier Advancement** choices available.
+* Shows all previously **selected Advancement tiers**.
+* Tracks **Seal of Wartorn Fate** (tooltip shows completion of "Seal of Wartorn Fate" quests).
+* Tracks **Troops** (orders and durability) and **Champions** (XP to next quality).
+* Limited **LibDataBroker** support and options.
+* Slash command **/wcc** or **/warcampaignscomplete** will also open and close.
 
 ## Options
 * Order Automatically (Characters)
@@ -51,7 +51,7 @@ Monitors Missions, Advancements, and Followers account-wide.
 * Repeat 1-2 for all characters you want included in this addon.
 
 ## Bugs &amp; Suggestions
-<p>Please make sure you have the latest version and post into the CurseForge.com comments with details and if possible a screenshot. Thank you for taking the time to report an issue, it helps make the addon better for everyone.</p>
+Please make sure you have the latest version and post into the CurseForge.com comments with details and if possible a screenshot. Thank you for taking the time to report an issue, it helps make the addon better for everyone.
 
 ## Known Issues
 * Actions taken on the WoW Companion App cannot be recorded by the addon. If you make frequent use of the app then using this addon is not advised.
