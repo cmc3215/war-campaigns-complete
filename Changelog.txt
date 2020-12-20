@@ -1,3 +1,8 @@
+**1.10**
+
+- Release date: 12/20/2020
+- Bug fixed: Since 9.0.2, right-clicking Minimap button would, depending on character progression, cause a Lua error or open the Shadowlands Convenant landing page instead of the Battle For Azeroth landing page.
+
 **1.09**
 
 - Release date: 12/05/2020
