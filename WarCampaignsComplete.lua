@@ -4,7 +4,7 @@
 local NS = select( 2, ... );
 local L = NS.localization;
 NS.releasePatch = "9.0.2";
-NS.versionString = "1.09";
+NS.versionString = "1.10";
 NS.version = tonumber( NS.versionString );
 --
 NS.initialized = false;
@@ -1359,6 +1359,14 @@ end
 --------------------------------------------------------------------------------------------------------------------------------------------
 -- Minimap Button
 --------------------------------------------------------------------------------------------------------------------------------------------
+NS.GarrisonLandingPage_Toggle = function()
+	if ( GarrisonLandingPage and GarrisonLandingPage:IsShown() ) then
+		HideUIPanel( GarrisonLandingPage );
+	else
+		ShowGarrisonLandingPage( Enum.GarrisonType.Type_8_0 );
+	end
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
 NS.MinimapButton( "WCCMinimapButton", NS.currentCharacter.factionIcon == 2173920 --[[Horde]] and 2175464 or 2175463, { -- Uses round icons
 	db = "minimapButtonPosition",
 	tooltip = function()
@@ -1369,7 +1377,7 @@ NS.MinimapButton( "WCCMinimapButton", NS.currentCharacter.factionIcon == 2173920
 	end,
 	OnRightClick = function( self )
 		if C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 ) then
-			GarrisonLandingPage_Toggle();
+			NS.GarrisonLandingPage_Toggle();
 		end
 	end,
 	OnMiddleClick = function( self )
@@ -1388,7 +1396,7 @@ NS.ldb = LibStub:GetLibrary( "LibDataBroker-1.1" ):NewDataObject( NS.addon, {
 		if button == "RightButton" and self:GetName() == NS.ldbiButtonName then -- Right-Click LibDBIcon Minimap button
 			-- Open the original Missions report just as the custom Minimap button does
 			if C_Garrison.HasGarrison( Enum.GarrisonType.Type_8_0 ) then
-				GarrisonLandingPage_Toggle();
+				NS.GarrisonLandingPage_Toggle();
 			end
 		else
 			NS.SlashCmdHandler( ( button == "RightButton" and "ldb" ) );
